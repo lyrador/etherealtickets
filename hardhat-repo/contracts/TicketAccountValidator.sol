@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TicketAccountValidation is Ownable {
+contract TicketAccountValidator is Ownable {
     // Mapping to keep track of validated accounts
     mapping(address => bool) private validatedTicketAccounts;
 
@@ -11,6 +11,8 @@ contract TicketAccountValidation is Ownable {
     event TicketAccountValidated(address indexed account);
     // Event to emit when an account's validation is revoked
     event TicketAccountValidationRevoked(address indexed account);
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
 
     // Function to validate an account
     function validateTicketAccount(address account) public onlyOwner {

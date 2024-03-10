@@ -12,11 +12,16 @@ async function main() {
 
   const lockedAmount = hre.ethers.parseEther("0.001");
 
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+  // const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
+  //   value: lockedAmount,
+  // });
 
-  await lock.waitForDeployment();
+  const ticketAccountValidation = await hre.ethers.deployContract("TicketAccountValidation");
+  const etherConsumer = await hre.ethers.deployContract("EtherConsumer");
+
+  // await lock.waitForDeployment();
+  await ticketAccountValidation.waitForDeployment();
+  await etherConsumer.waitForDeployment();
 
   console.log(
     `Lock with ${ethers.formatEther(
