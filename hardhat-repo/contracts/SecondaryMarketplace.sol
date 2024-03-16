@@ -8,7 +8,7 @@ contract SecondaryMarketplace is StateDefinition {
 
     // Determine whether can buy tickets
 
-    //eventId to secondaryMarketplace
+    //concertId to secondaryMarketplace
     mapping(uint256 => secondaryMarketplace) secondaryMarketplaces;
 
     struct secondaryMarketplace {
@@ -57,7 +57,7 @@ contract SecondaryMarketplace is StateDefinition {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         require(msg.sender = concertContract.getOwner(), "Not owner of concert contract");
         secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(marketplaceState.Closed, msg.sender, []);
-        secondaryMarketplaces[eventId] = new newSecondaryMarketplace;
+        secondaryMarketplaces[concertId] = new newSecondaryMarketplace;
     }
 
     // resller sell ticket
@@ -69,10 +69,10 @@ contract SecondaryMarketplace is StateDefinition {
         uint256 excessWei = msg.value - sellingCommission;
         payable(msg.sender).transfer(excessWei);
 
-        uint256 eventId = ticketContract.getEventIdFromTicketId(ticketId);
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         // list ticket on secondary marketplace
         ticketContract.transferFrom(msg.sender, address(this), ticketId);
-        secondaryMarketplaces[eventId].listedTicketIds.push(ticketId);
+        secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
     function buyTicket(uint256 ticketId) public payable {
@@ -87,7 +87,7 @@ contract SecondaryMarketplace is StateDefinition {
         // Buyer transfers eth to organizer
         address ticketOwner = ticketContract.getOwner(ticketId);
         ticketContract.transferFrom(address(this), msg.sender, ticketId);
-        removeElement(secondaryMarketplaces[eventId].listedTicketIds, ticketId);
+        removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
     }
 
     //function to remove an array slightly more efficiently by swapping element with last
@@ -99,6 +99,11 @@ contract SecondaryMarketplace is StateDefinition {
                 break; 
             }
         }
+    }
+
+    function getListedTicketsFromConcert(uint25 concertId) returns (uint256[]) {
+        require(concertContract.isValidConcert(concertId), "Concert does not exist");
+        return secondaryMarketplaces[concertId].listedTicketIds;
     }
 
     // //if can buy 4 tickets, enqueue address 4 times??
