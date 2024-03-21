@@ -1,97 +1,82 @@
-contract Marketplace {
+pragma solidity ^0.8.24;
 
-    // Determine whether can buy tickets
-    enum State {
-        Closed,
-        Open
-    }
+import "./Concert.sol";
+import "/Ticket.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-    State state;
-    address organizer;
-    uint ticketCount;
-    mapping(uint => Ticket) tickets;
+contract Marketplace is ERC721 {
 
-    // Buyer queue    
+    address owner; // Concert Organizer
+    uint256 ticketId; // tokenId of NFT
+    Concert concertContract;
+    Ticket ticketContract;
     address[] queue;
 
-    // Each buyer buys 1 ticket
-    uint currTicketBought;
+    mapping(uint256 => mapping(address => bool)) hasQueued;
+    mapping(uint256 => mapping(uint256 => address)) seatTaken;
+    mapping(uint256 => uint256[]) seatsTaken;
 
-    uint256 creationTime;
-
-    // probably abstract to Ticket.sol
-    struct Ticket {
-        uint price;
-        uint seatNum;
-        address owner;
-        string category;
-        //address reserved;
-        bool purchased;
+    constructor(Concert concertAddress, Ticket ticketAddress) public {
+        concertContract = concertAddress;
+        ticketContract = ticketAddress;
+        owner = msg.sender;
     }
 
-    constructor() public {
-        // event organizer to deploy this contract
-        organizer = msg.sender;
-        ticketCount = 0;
-        state = State.Closed;
-        creationTime = block.timestamp;
-    }
-
-    modifier onlyOrganizer() {
-        require(msg.sender == organizer, "Only the organizer can call this function");
+    modifier onlyOwner() {
+        require(msg.sender == owner);
         _;
     }
 
-    modifier atState(State _state) {
-        require(state == _state);
-        _;
-    }
-
-    modifier timedTransitions() {
-        // Marketplace auto opens 1 day after deployment
-        if (state == State.Closed && block.timestamp >= creationTime + 1 days) {
-            state = State.Open;
-        } 
-
-        // Marketplace auto closes 2 days after deployment
-        if (state == State.Open && block.timestamp >= creationTime + 2 days) {
-            state = State.Closed;
-        }
-        _;
-    }
-
-    // Only Organizer can list tickets
-    function listTicket(uint price, uint seatNum, string memory category) public onlyOrganizer {
-        Ticket memory ticket = Ticket(price, seatNum, msg.sender, category, false);
-        // save the ticket
-        ticketCount++;
-        tickets[ticketCount] = ticket;
-    }
-
-    function joinQueue() public {
+    function joinQueue(uint256 _concertId) public {
+        // Buyer has not queued
+        require(!hasQueued[_concertId][msg.sender]);
         queue.push(msg.sender);
+        hasQueued[_concertId][msg.sender] = true;
     }
 
-    function pay(uint ticketId) public payable timedTransitions atState(State.Open) {
-        // Validate if buyer is at the front of the queue
+    function buyTicket(uint256 _concertId, uint256[] _seatIds) public payable {
+        // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
+        // Valid concert id
+        require(_concertId > 0);
+        require(_concertId <= concertContract.getTotalConcerts());
 
-        // Validate whether eth sent is the same as ticket price
-
-        // Buyer transfers eth to organizer
-
-        currTicketBought = ticketId;
+        uint256 amtToPay = 0;
         
+        for (uint i = 0; i < seatIds.length; i++) {
+            // Valid seat ids
+            require(_seatIds[i] > 0);
+            require(_seatIds[i] <= concertContract.getTotalSeats(_concertId));
+            // Seat is not taken
+            require(seatTaken[_concertId][_seatIds[i]] == address(0));
+
+            amtToPay += concertContract.getSeatCost(_seatIds[i]);
+        }
+
+        // Eth sent is enough
+        require(msg.value >= amtToPay);
+
+        for (uint i = 0; i < seatIds.length; i++) {
+            // Update seat status
+            seatTaken[_concertId][_seatIds[i]] = msg.sender;
+            seatsTaken[_concertId].push(_seatIds[i]);
+            // Mint NFT
+            ticketId++;
+            _safeMint(msg.sender, ticketId);
+        }
+
+        // Pop buyer from queue
+        address[] newQueue;
+        for (uint i = 1; i < queue.length; i++) {
+            newQueue.push(queue[i]);
+        }
+        queue = newQueue;
+
     }
 
-    function transferTickets() public timedTransitions atState(State.Open) onlyOrganizer {
-
-        // Transfer ticket that buyer bought to buyer
-        tickets[currTicketBought].owner = msg.sender;
-
-        // Remove first user from queue
-
-        currTicketBought = 0;
+    function withdraw() public onlyOwner {
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success);
     }
 
 }
