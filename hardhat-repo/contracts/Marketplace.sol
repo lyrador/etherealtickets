@@ -28,35 +28,35 @@ contract Marketplace is ERC721 {
     }
 
     // can be added to below functions
-    modifier primaryMarketplaceOpen(uint256 _concertId) {
-        require(concertContract.getConcertStage(_concertId) == Concert.Stage.PRIMARY_SALE);
+    modifier primaryMarketplaceOpen(uint256 concertId) {
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE);
         _;
     }
 
-    function joinQueue(uint256 _concertId) public primaryMarketplaceOpen(_concertId) {
+    function joinQueue(uint256 concertId) public primaryMarketplaceOpen(concertId) {
         // Buyer has not queued
-        require(!hasQueued[_concertId][msg.sender]);
+        require(!hasQueued[concertId][msg.sender]);
         queue.push(msg.sender);
-        hasQueued[_concertId][msg.sender] = true;
+        hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 _concertId, uint256[] _seatIds, string[] _passportIds) public payable primaryMarketplaceOpen(_concertId) {
+    function buyTicket(uint256 concertId, uint256[] seatIds, string[] passportIds) public payable primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
         // Valid concert id
-        require(_concertId > 0);
-        require(isValidConcert(_concertId)); // use isValidConcert method
+        require(concertId > 0);
+        require(isValidConcert(concertId)); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatIds.length; i++) {
             // Valid seat ids
-            require(_seatIds[i] > 0);
-            require(isValidSeat(_seatIds[i]));
+            require(seatIds[i] > 0);
+            require(isValidSeat(seatIds[i]));
             // Seat is not taken
-            require(seatTaken[_concertId][_seatIds[i]] == address(0));
+            require(seatTaken[concertId][seatIds[i]] == address(0));
 
-            amtToPay += concertContract.getSeatCost(_seatIds[i]);
+            amtToPay += concertContract.getSeatCost(seatIds[i]);
         }
 
         // Eth sent is enough
@@ -64,13 +64,13 @@ contract Marketplace is ERC721 {
 
         for (uint i = 0; i < seatIds.length; i++) {
             // Update seat status
-            seatTaken[_concertId][_seatIds[i]] = msg.sender;
-            seatsTaken[_concertId].push(_seatIds[i]);
+            seatTaken[concertId][seatIds[i]] = msg.sender;
+            seatsTaken[concertId].push(seatIds[i]);
             // Mint NFT
             ticketId++;
             _safeMint(msg.sender, ticketId);
             // Create ticket object
-            string memory passport = _passportIds[i];
+            string memory passport = passportIds[i];
             ticketContract.createTicket(); // check what to pass in
         }
 
