@@ -6,6 +6,14 @@ contract Concert {
     address public owner;
     uint256 public totalConcerts;
 
+    enum Stage {
+        INITIALIZATION,
+        PRIMARY_SALE,
+        SECONDARY_SALE,
+        OPEN,
+        COMPLETED
+    }
+
     struct Concert {
         uint256 id;
         string name;
@@ -14,6 +22,7 @@ contract Concert {
         uint24[] categorySeatNumber;
         datetime concertDate;
         datetime salesDate;
+        Stage stage;
         //datetime primaryMarketOpen
         //datetime secondaryMarketOpen
     }
@@ -52,7 +61,8 @@ contract Concert {
             _ticketCost,
             _categorySeatNumber,
             _concertDate,
-            _salesDate
+            _salesDate,
+            Stage.INITIALIZATION
             );
     }
     
@@ -64,7 +74,8 @@ contract Concert {
         uint256[] memory _ticketCost,
         uint24[] memory _categorySeatNumber,
         uint256 _concertDate,
-        uint256 _salesDate
+        uint256 _salesDate,
+        Stage nextStage
     ) public onlyOwner {
         require(concerts[concertID].id != 0, "Concert does not exist");
         
@@ -74,6 +85,8 @@ contract Concert {
         concerts[concertID].categorySeatNumber = _categorySeatNumber;
         concerts[concertID].concertDate = _concertDate;
         concerts[concertID].salesDate = _salesDate;
+        // concert organizer manually updates stage
+        concerts[concertID].stage = nextStage;
     }
 
     //deleting the concert
@@ -127,5 +140,11 @@ contract Concert {
     //checking if the concert is valid or not
     function isValidConcert(uint256 concertID) public view returns (bool) {
     return concerts[concertID].id != 0;
+    }
+
+
+    //check concert stage
+    function getConcertStage(uint256 concertID) public view returns (Stage) {
+        return concerts[concertID].stage;
     }
 }
