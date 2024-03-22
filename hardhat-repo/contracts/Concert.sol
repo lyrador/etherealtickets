@@ -6,14 +6,6 @@ contract Concert {
     address public owner;
     uint256 public totalConcerts;
 
-    enum Stage {
-        INITIALIZATION,
-        PRIMARY_SALE,
-        SECONDARY_SALE,
-        OPEN,
-        COMPLETED
-    }
-
     struct Concert {
         uint256 id;
         string name;
@@ -22,7 +14,6 @@ contract Concert {
         uint24[] categorySeatNumber;
         datetime concertDate;
         datetime salesDate;
-        Stage stage;
         //datetime primaryMarketOpen
         //datetime secondaryMarketOpen
     }
@@ -61,8 +52,7 @@ contract Concert {
             _ticketCost,
             _categorySeatNumber,
             _concertDate,
-            _salesDate,
-            Stage.INITIALIZATION
+            _salesDate
             );
     }
     
@@ -74,8 +64,7 @@ contract Concert {
         uint256[] memory _ticketCost,
         uint24[] memory _categorySeatNumber,
         uint256 _concertDate,
-        uint256 _salesDate,
-        Stage nextStage
+        uint256 _salesDate
     ) public onlyOwner {
         require(concerts[concertID].id != 0, "Concert does not exist");
         
@@ -85,8 +74,6 @@ contract Concert {
         concerts[concertID].categorySeatNumber = _categorySeatNumber;
         concerts[concertID].concertDate = _concertDate;
         concerts[concertID].salesDate = _salesDate;
-        // concert organizer manually updates stage
-        concerts[concertID].stage = nextStage;
     }
 
     //deleting the concert
@@ -97,8 +84,8 @@ contract Concert {
 
     //getting the concert id
     function getConcertID(uint256 concertID) public view returns (uint256) {
-    require(concerts[concertID].id != 0, "Concert does not exist");
-    return concertID;
+        require(concerts[concertID].id != 0, "Concert does not exist");
+        return concertID;
     }
 
     //getting the total cost of the concert based on the tickets and the cost of each ticket
@@ -140,11 +127,5 @@ contract Concert {
     //checking if the concert is valid or not
     function isValidConcert(uint256 concertID) public view returns (bool) {
     return concerts[concertID].id != 0;
-    }
-
-
-    //check concert stage
-    function getConcertStage(uint256 concertID) public view returns (Stage) {
-        return concerts[concertID].stage;
     }
 }
