@@ -40,19 +40,19 @@ contract Marketplace is ERC721 {
         hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 concertId, uint256[] seatIds, string[] passportIds) public payable primaryMarketplaceOpen(concertId) {
+    function buyTicket(uint256 concertId, uint256[] memory seatIds, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
         // Valid concert id
         require(concertId > 0);
-        require(isValidConcert(concertId)); // use isValidConcert method
+        require(concertContract.isValidConcert(concertId)); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatIds.length; i++) {
             // Valid seat ids
             require(seatIds[i] > 0);
-            require(isValidSeat(seatIds[i]));
+            require(concertContract.isValidSeat(seatIds[i]));
             // Seat is not taken
             require(seatTaken[concertId][seatIds[i]] == address(0));
 
@@ -71,11 +71,11 @@ contract Marketplace is ERC721 {
             _safeMint(msg.sender, ticketId);
             // Create ticket object
             string memory passport = passportIds[i];
-            ticketContract.createTicket(); // check what to pass in
+            //ticketContract.createTicket(); // check what to pass in
         }
 
         // Pop buyer from queue
-        address[] newQueue;
+        address[] memory newQueue;
         for (uint i = 1; i < queue.length; i++) {
             newQueue.push(queue[i]);
         }

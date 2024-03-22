@@ -1,10 +1,10 @@
 pragma solidity ^0.8.24;
 
 import "./StateDefinition.sol";
-import "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
+import "./Ticket.sol";
+import "./Concert.sol";
 
 contract SecondaryMarketplace is StateDefinition {
-    using DoubleEndedQueue for DoubleEndedQueue.Queue;
 
     //concertId to secondaryMarketplace
     mapping(uint256 => secondaryMarketplace) secondaryMarketplaces;
@@ -13,7 +13,6 @@ contract SecondaryMarketplace is StateDefinition {
         marketplaceState state;
         address owner;
         uint256[] listedTicketIds;
-        DoubleEndedQueue.Queue queue;
     }
 
     Ticket ticketContract;
@@ -23,23 +22,23 @@ contract SecondaryMarketplace is StateDefinition {
 
     constructor(Concert concertContractAddr, Ticket ticketContractAddr) public {
         // only admin can deploy this contract
-        organizer = msg.sender;
+        //organizer = msg.sender;
         ticketContract = ticketContractAddr;
         concertContract = concertContractAddr;
         buyingCommission = 500; //500 wei is abt 1.55usd
         sellingCommission = 500;
     }
 
-    modifier onlyOrganizer() {
-        require(msg.sender == organizer, "Only the organizer can call this function");
-        _;
-    }
+    // modifier onlyOrganizer() {
+    //     require(msg.sender == organizer, "Only the organizer can call this function");
+    //     _;
+    // }
 
     function createSecondaryMarketplace(uint256 concertId) public {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         require(msg.sender = concertContract.getOwner(), "Not owner of concert contract");
         secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(marketplaceState.Closed, msg.sender, []);
-        secondaryMarketplaces[concertId] = new newSecondaryMarketplace;
+        secondaryMarketplaces[concertId] = newSecondaryMarketplace;
     }
 
     // reseller list ticket
@@ -111,43 +110,8 @@ contract SecondaryMarketplace is StateDefinition {
         }
     }
 
-    function getListedTicketsFromConcert(uint256 concertId) public returns (uint256[]) {
+    function getListedTicketsFromConcert(uint256 concertId) public returns (uint256[] memory) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         return secondaryMarketplaces[concertId].listedTicketIds;
     }
-
-    // //if can buy 4 tickets, enqueue address 4 times??
-    // function joinQueue(uint256 marketId) public {
-    //     enqueueAddress(marketId, msg.sender);
-    // }
-
-    // function transferTickets() public atState(State.Open) onlyOrganizer {
-
-    //     // Transfer ticket that buyer bought to buyer
-    //     tickets[currTicketBought].owner = msg.sender;
-
-    //     // Remove first user from queue
-
-    //     currTicketBought = 0;
-    // }
-
-    // function enqueueAddress(uint256 marketId, address addr) public {
-    //     // Ensure the marketplace exists
-    //     require(secondaryMarketplaces[marketId] != 0, "Marketplace does not exist");
-    //     // Add a ticket ID to the queue
-    //     secondaryMarketplaces[marketId].queue.pushBack(addr);
-    // }
-
-    // function dequeueAddress(uint256 marketId) public returns (address) {
-    //     // Ensure the marketplace exists
-    //     require(secondaryMarketplaces[marketId] != 0, "Marketplace does not exist");
-    //     require(!secondaryMarketplaces[marketId].queue.empty(), "Queue is empty");
-    //     // Remove an address from the front of queue and return it
-    //     return secondaryMarketplaces[marketId].queue.popFront();
-    // }
-
-    // function peekFront(uint256 marketId) public view returns (address) {
-    //     require(!secondaryMarketplaces[marketId].queue.empty(), "Queue is empty");
-    //     return secondaryMarketplaces[marketId].queue.first();
-    // }
 }
