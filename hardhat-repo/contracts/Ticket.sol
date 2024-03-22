@@ -4,7 +4,6 @@ contract Ticket {
     struct Ticket {
         uint256 ticketId;
         uint256 eventId;
-        string password;
         address prevTicketOwner;
     }
 
