@@ -29,18 +29,18 @@ contract Marketplace is ERC721 {
 
     // can be added to below functions
     modifier primaryMarketplaceOpen(uint256 _concertId) {
-        require(concertContract.getStage(_concertId) == Concert. Stage.Primary);
+        require(concertContract.getConcertStage(_concertId) == Concert.Stage.PRIMARY_SALE);
         _;
     }
 
-    function joinQueue(uint256 _concertId) public {
+    function joinQueue(uint256 _concertId) public primaryMarketplaceOpen(_concertId) {
         // Buyer has not queued
         require(!hasQueued[_concertId][msg.sender]);
         queue.push(msg.sender);
         hasQueued[_concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 _concertId, uint256[] _seatIds) public payable {
+    function buyTicket(uint256 _concertId, uint256[] _seatIds) public payable primaryMarketplaceOpen(_concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
         // Valid concert id
