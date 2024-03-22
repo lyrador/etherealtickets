@@ -21,7 +21,7 @@ contract SecondaryMarketplace is StateDefinition {
     uint256 buyingCommission;
     uint256 sellingCommission;
 
-    constructor(Ticket ticketContractAddr, Concert concertContractAddr) public {
+    constructor(Concert concertContractAddr, Ticket ticketContractAddr) public {
         // only admin can deploy this contract
         organizer = msg.sender;
         ticketContract = ticketContractAddr;
