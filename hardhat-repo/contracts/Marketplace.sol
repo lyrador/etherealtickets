@@ -71,7 +71,7 @@ contract Marketplace is ERC721 {
             _safeMint(msg.sender, ticketId);
             // Create ticket object
             string memory passport = _passportIds[i];
-            ticketContract.createTicket(); // check what to pass in
+            ticketContract.createTicket(ticketId, _concertId); // check what to pass in
         }
 
         // Pop buyer from queue
