@@ -59,7 +59,7 @@ contract SecondaryMarketplace is StateDefinition {
         require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) = msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
-        require(econdaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
+        require(secondaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
 
         require(msg.value >= sellingCommission, "Insufficient amount to sell");
         uint256 excessWei = msg.value - sellingCommission;

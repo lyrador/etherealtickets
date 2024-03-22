@@ -29,7 +29,7 @@ contract Marketplace is ERC721 {
 
     // can be added to below functions
     modifier primaryMarketplaceOpen(uint256 _concertId) {
-        require(concertContract.getStage(_concertId) == Concert.Stage.Primary);
+        require(concertContract.getStage(_concertId) == Concert. Stage.Primary);
         _;
     }
 
@@ -45,14 +45,14 @@ contract Marketplace is ERC721 {
         require(msg.sender == queue[0]);
         // Valid concert id
         require(_concertId > 0);
-        require(_concertId <= concertContract.getTotalConcerts());
+        require(isValidConcert(_concertId)); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatIds.length; i++) {
             // Valid seat ids
             require(_seatIds[i] > 0);
-            require(_seatIds[i] <= concertContract.getTotalSeats(_concertId));
+            require(isValidSeat(_seatIds[i]));
             // Seat is not taken
             require(seatTaken[_concertId][_seatIds[i]] == address(0));
 
@@ -69,6 +69,8 @@ contract Marketplace is ERC721 {
             // Mint NFT
             ticketId++;
             _safeMint(msg.sender, ticketId);
+            // Create ticket object
+            ticketContract.createTicket(); // check what to pass in
         }
 
         // Pop buyer from queue
