@@ -1,7 +1,7 @@
 pragma solidity ^0.8.24;
 
 import "./Concert.sol";
-import "/Ticket.sol";
+import "./Ticket.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract Marketplace is ERC721 {
@@ -40,7 +40,7 @@ contract Marketplace is ERC721 {
         hasQueued[_concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 _concertId, uint256[] _seatIds) public payable primaryMarketplaceOpen(_concertId) {
+    function buyTicket(uint256 _concertId, uint256[] _seatIds, string[] _passportIds) public payable primaryMarketplaceOpen(_concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
         // Valid concert id
@@ -70,6 +70,7 @@ contract Marketplace is ERC721 {
             ticketId++;
             _safeMint(msg.sender, ticketId);
             // Create ticket object
+            string memory passport = _passportIds[i];
             ticketContract.createTicket(); // check what to pass in
         }
 
