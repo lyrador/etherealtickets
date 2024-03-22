@@ -101,19 +101,35 @@ contract Concert {
     return concertID;
     }
 
+    // //getting the total cost of the concert based on the tickets and the cost of each ticket
+    // function getConcertCost (uint256 concertID) public view returns (uint256) {
+    //     require(concerts[concertID].id != 0, "Concert does not exist");
+    //     require(concerts[concertID].categorySeatNumber.length === concerts[concertID].ticketCost.length, "Number of categorys and cost per category length does not match");
+
+    //     uint256 cost = 0;
+    //     uint256 lengthOfCategories = concerts[concertID].categorySeatNumber.length;
+
+    //     for (uint256 j = 0; j < lengthOfCategories; j++) {
+    //         cost += concerts[concertID].categorySeatNumber[j] * concerts[concertID].ticketCost[j]
+    //     }
+
+    //     return cost;
+    // }
+
     //getting the total cost of the concert based on the tickets and the cost of each ticket
-    function getConcertCost (uint256 concertID) public view returns (uint256) {
+    function getSeatCost(uint256 concertID, uint256 seatNumber) public view returns (uint256) {
         require(concerts[concertID].id != 0, "Concert does not exist");
-        require(concerts[concertID].categorySeatNumber.length === concerts[concertID].ticketCost.length, "Number of categorys and cost per category length does not match");
+        require(seatNumber <= getTotalTickets(concertID), "Seat number is not avaliable");
 
-        uint256 cost = 0;
-        uint256 lengthOfCategories = concerts[concertID].categorySeatNumber.length;
+        uint24 totalSeatsChecker = 0;
 
-        for (uint256 j = 0; j < lengthOfCategories; j++) {
-            cost += concerts[concertID].categorySeatNumber[j] * concerts[concertID].ticketCost[j]
+        for (uint24 i = 0; i < concerts[concertID].categorySeatNumber.length; i++) {
+            totalSeatsChecker += concerts[concertID].categorySeatNumber[i];
+
+            if (seatNumber <= totalSeatsChecker) {
+                return concerts[concertID].ticketCost[i];
+            }
         }
-
-        return cost;
     }
 
     
@@ -140,6 +156,14 @@ contract Concert {
     //checking if the concert is valid or not
     function isValidConcert(uint256 concertID) public view returns (bool) {
     return concerts[concertID].id != 0;
+    }
+
+    function isValidSeat(uint256 concertID, uint24 seatNumber) public view returns (bool) {
+        require(concerts[concertID].id != 0, "Concert does not exist");
+        require(seatNumber <= getTotalTickets(concertID), "Seat does not exist");
+
+        //since the require above already checks if the seat number inputted is valid
+        return true;
     }
 
 
