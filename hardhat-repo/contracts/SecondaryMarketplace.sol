@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
 contract SecondaryMarketplace is StateDefinition {
     using DoubleEndedQueue for DoubleEndedQueue.Queue;
 
-    // Determine whether can buy tickets
-
     //concertId to secondaryMarketplace
     mapping(uint256 => secondaryMarketplace) secondaryMarketplaces;
 
@@ -16,16 +14,6 @@ contract SecondaryMarketplace is StateDefinition {
         address owner;
         uint256[] listedTicketIds;
         DoubleEndedQueue.Queue queue;
-    }
-
-    // probably abstract to Ticket.sol
-    struct Ticket {
-        uint price;
-        uint seatNum;
-        address owner;
-        string category;
-        //address reserved;
-        bool purchased;
     }
 
     Ticket ticketContract;
@@ -54,36 +42,41 @@ contract SecondaryMarketplace is StateDefinition {
         secondaryMarketplaces[concertId] = new newSecondaryMarketplace;
     }
 
-    // resller sell ticket
-    function sellTicket(uint256 ticketId) public payable {
+    // reseller list ticket
+    function listTicket(uint256 ticketId) public payable {
         require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) = msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         require(secondaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
 
-        require(msg.value >= sellingCommission, "Insufficient amount to sell");
-        uint256 excessWei = msg.value - sellingCommission;
-        payable(msg.sender).transfer(excessWei);
-        
-        // list ticket on secondary marketplace
-        ticketContract.transferFrom(msg.sender, address(this), ticketId);
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
+    }
+
+    function unlistTicket(uint256 ticketId) public payable {
+        require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
+        require(ticketContract.getOwner(ticketId) = msg.sender, "Not owner of ticket");
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
+        require(secondaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
+        
+        // unlist ticket on secondary marketplace
+        removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
     }
 
     function buyTicket(uint256 ticketId) public payable {
         // Validate if buyer is at the front of the queue aka, require(msg.sender == peekFront());???
         require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
-        require(econdaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
+        require(secondaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
 
         uint256 ticketPrice = ticketContract.getPrice(ticketId);
         require(msg.value >= ticketPrice, "Insufficient amount to buy");
         uint256 excessWei = msg.value - (ticketPrice + buyingCommission);
         payable(msg.sender).transfer(excessWei);
 
-        // Buyer transfers eth to organizer
+        // Buyer transfers ticket to seller, now that organiser received buyer money, organiser transfer eth to seller
         address ticketOwner = ticketContract.getOwner(ticketId);
-        ticketContract.transferFrom(address(this), msg.sender, ticketId);
+        payable(ticketOwner).transfer(ticketPrice - sellingCommission);
+        ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
     }
 
