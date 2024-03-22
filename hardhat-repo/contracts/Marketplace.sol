@@ -16,7 +16,8 @@ contract Marketplace is ERC721 {
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
     mapping(uint256 => uint256[]) seatsTaken;
 
-    constructor(Concert concertAddress, Ticket ticketAddress) public {
+    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
+        string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
         ticketContract = ticketAddress;
         owner = msg.sender;
@@ -40,7 +41,7 @@ contract Marketplace is ERC721 {
         hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 concertId, uint256[] memory seatIds, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
+    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
         // Valid concert id
@@ -49,23 +50,23 @@ contract Marketplace is ERC721 {
 
         uint256 amtToPay = 0;
         
-        for (uint i = 0; i < seatIds.length; i++) {
+        for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
-            require(seatIds[i] > 0);
-            require(concertContract.isValidSeat(seatIds[i]));
+            require(seatNumbers[i] > 0);
+            require(concertContract.isValidSeat(concertId, seatNumbers[i]));
             // Seat is not taken
-            require(seatTaken[concertId][seatIds[i]] == address(0));
+            require(seatTaken[concertId][seatNumbers[i]] == address(0));
 
-            amtToPay += concertContract.getSeatCost(seatIds[i]);
+            amtToPay += concertContract.getSeatCost(concertId, seatNumbers[i]);
         }
 
         // Eth sent is enough
         require(msg.value >= amtToPay);
 
-        for (uint i = 0; i < seatIds.length; i++) {
+        for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
-            seatTaken[concertId][seatIds[i]] = msg.sender;
-            seatsTaken[concertId].push(seatIds[i]);
+            seatTaken[concertId][seatNumbers[i]] = msg.sender;
+            seatsTaken[concertId].push(seatNumbers[i]);
             // Mint NFT
             ticketId++;
             _safeMint(msg.sender, ticketId);
@@ -74,10 +75,10 @@ contract Marketplace is ERC721 {
             //ticketContract.createTicket(); // check what to pass in
         }
 
-        // Pop buyer from queue
-        address[] memory newQueue;
+        /// Pop buyer from queue
+        address[] memory newQueue = new address[](queue.length - 1); // Initialize newQueue with appropriate size
         for (uint i = 1; i < queue.length; i++) {
-            newQueue.push(queue[i]);
+            newQueue[i - 1] = queue[i]; // Assign queue elements to newQueue
         }
         queue = newQueue;
 
