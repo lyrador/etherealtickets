@@ -43,7 +43,7 @@ contract SecondaryMarketplace is StateDefinition {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId) public payable {
+    function listTicket(uint256 ticketId) public {
         require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) = msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
@@ -52,7 +52,7 @@ contract SecondaryMarketplace is StateDefinition {
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId) public payable {
+    function unlistTicket(uint256 ticketId) public {
         require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) = msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
@@ -111,7 +111,7 @@ contract SecondaryMarketplace is StateDefinition {
         }
     }
 
-    function getListedTicketsFromConcert(uint256 concertId) returns (uint256[]) {
+    function getListedTicketsFromConcert(uint256 concertId) public returns (uint256[]) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         return secondaryMarketplaces[concertId].listedTicketIds;
     }

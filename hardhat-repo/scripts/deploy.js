@@ -27,6 +27,15 @@ async function main() {
   const etherConsumer = await hre.ethers.deployContract("EtherConsumer");
   await etherConsumer.waitForDeployment();
 
+  const concert = await hre.ethers.deployContract("Concert", [owner]);
+  await concert.waitForDeployment();
+  const ticket = await hre.ethers.deployContract("Ticket", concert.target);
+  await ticket.waitForDeployment();
+  const marketplace = await hre.ethers.deployContract("Marketplace", concert.target, ticket.target);
+  await marketplace.waitForDeployment();
+  const secondaryMarketPlace = await hre.ethers.deployContract("SecondaryMarketPlace", concert.target, ticket.target);
+  await secondaryMarketPlace.waitForDeployment();
+
   console.log(
     `TicketAccountValidator deployed to ${ticketAccountValidator.target}`
   );

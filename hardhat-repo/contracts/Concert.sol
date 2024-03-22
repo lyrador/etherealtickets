@@ -12,10 +12,9 @@ contract Concert {
         string location;
         uint256[] ticketCost;
         uint24[] categorySeatNumber;
-        datetime concertDate;
-        datetime salesDate;
-        //datetime primaryMarketOpen
-        //datetime secondaryMarketOpen
+        uint concertDate;
+        uint salesDate;
+        Stage stage;
     }
 
     constructor() {
