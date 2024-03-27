@@ -10,7 +10,6 @@ contract SecondaryMarketplace is StateDefinition {
     mapping(uint256 => secondaryMarketplace) secondaryMarketplaces;
 
     struct secondaryMarketplace {
-        marketplaceState state;
         address owner;
         uint256[] listedTicketIds;
     }
@@ -34,30 +33,33 @@ contract SecondaryMarketplace is StateDefinition {
     //     _;
     // }
 
-    function createSecondaryMarketplace(uint256 concertId) public {
+    modifier secondaryMarketplaceOpen(uint256 concertId) {
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Marketplace not open");
+        _;
+    }
+
+    function createSecondaryMarketplace(uint256 concertId) public secondaryMarketplaceOpen(concertId) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         require(msg.sender == concertContract.getOwner(), "Not owner of concert contract");
         uint256[] memory initialTickets;
-        secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(marketplaceState.Closed, msg.sender, initialTickets);
+        secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(msg.sender, initialTickets);
         secondaryMarketplaces[concertId] = newSecondaryMarketplace;
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId) public {
+    function listTicket(uint256 ticketId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
         // TO FIX: ticketContract.isValidTicket(ticketId);
         // require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         // require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
-        require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
+        //require(ticketContract.getConcertIdFromTicketId(ticketId) == concertId, "Ticket not for this concert");
 
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId) public {
+    function unlistTicket(uint256 ticketId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
         //require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
         //require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
-        require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
+        //uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         
         // unlist ticket on secondary marketplace
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
@@ -114,7 +116,7 @@ contract SecondaryMarketplace is StateDefinition {
         }
     }
 
-    function getListedTicketsFromConcert(uint256 concertId) public returns (uint256[] memory) {
+    function getListedTicketsFromConcert(uint256 concertId) public view returns (uint256[] memory) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         return secondaryMarketplaces[concertId].listedTicketIds;
     }

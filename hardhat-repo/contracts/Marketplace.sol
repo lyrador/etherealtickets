@@ -30,7 +30,7 @@ contract Marketplace is ERC721 {
 
     // can be added to below functions
     modifier primaryMarketplaceOpen(uint256 concertId) {
-        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE);
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Marketplace not open");
         _;
     }
 
@@ -43,25 +43,25 @@ contract Marketplace is ERC721 {
 
     function buyTicket(uint256 concertId, uint24[] memory seatNumbers, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
-        require(msg.sender == queue[0]);
+        require(msg.sender == queue[0], "Buyer not at front of queue");
         // Valid concert id
-        require(concertId > 0);
-        require(concertContract.isValidConcert(concertId)); // use isValidConcert method
+        require(concertId > 0, "Invalid concertId");
+        require(concertContract.isValidConcert(concertId), "Invalid concertId (2)"); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
-            require(seatNumbers[i] > 0);
-            require(concertContract.isValidSeat(concertId, seatNumbers[i]));
+            require(seatNumbers[i] > 0, "Seat numbers must be greater than 0");
+            require(concertContract.isValidSeat(concertId, seatNumbers[i]), "Seat numbers are invalid");
             // Seat is not taken
-            require(seatTaken[concertId][seatNumbers[i]] == address(0));
+            require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat must be empty");
 
             amtToPay += concertContract.getSeatCost(concertId, seatNumbers[i]);
         }
 
         // Eth sent is enough
-        require(msg.value >= amtToPay);
+        require(msg.value >= amtToPay, "Not enough amount sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
@@ -73,6 +73,7 @@ contract Marketplace is ERC721 {
             // Create ticket object
             string memory passport = passportIds[i];
             //ticketContract.createTicket(); // check what to pass in
+            ticketContract.updateTicketOwner(ticketId, msg.sender);
         }
 
         /// Pop buyer from queue

@@ -24,13 +24,24 @@ contract Ticket {
     }
 
     function getConcertIdFromTicketId(uint256 ticketId) public view returns (uint256) {
-        require(validateTicket(ticketId), "Ticket is invalid");
+        // IMPORTANT: NEED TO UPDATE VALIDATION IN MARKETPLACE FIRST, ELSE WILL HAVE ERRORS, TEMPORARILY COMMENTED OUT
+        //require(validateTicket(ticketId), "Ticket is invalid");
         return tickets[ticketId].eventId;
     }
 
     function getPreviousTicketOwner(uint256 ticketId) public view returns (address) {
-        require(validateTicket(ticketId), "Ticket is invalid");
+        // IMPORTANT: NEED TO UPDATE VALIDATION IN MARKETPLACE FIRST, ELSE WILL HAVE ERRORS, TEMPORARILY COMMENTED OUT
+        //require(validateTicket(ticketId), "Ticket is invalid");
         return tickets[ticketId].prevTicketOwner;
+    }
+
+    // IMPORTANT: nd to add a check to make sure got access right to update
+    function updateTicketOwner(uint256 ticketId, address newOwner) public {
+        ticketOwner[ticketId] = newOwner;
+    }
+
+    function getTicketOwner(uint256 ticketId) public view returns (address) {
+        return ticketOwner[ticketId];
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {
