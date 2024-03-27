@@ -9,44 +9,53 @@ contract Marketplace is ERC721 {
     address owner; // Concert Organizer
     uint256 ticketId; // tokenId of NFT
     Concert concertContract;
-    Ticket ticketContract;
+    //Ticket ticketContract;
     address[] queue;
 
     mapping(uint256 => mapping(address => bool)) hasQueued;
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
     mapping(uint256 => uint256[]) seatsTaken;
 
-    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
-        string memory _symbol) ERC721(_name, _symbol) public {
+    constructor(Concert concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
-        ticketContract = ticketAddress;
         owner = msg.sender;
     }
+
+    // constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
+    //     string memory _symbol) ERC721(_name, _symbol) public {
+    //     concertContract = concertAddress;
+    //     ticketContract = ticketAddress;
+    //     owner = msg.sender;
+    // }
 
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
     }
 
-    // can be added to below functions
-    modifier primaryMarketplaceOpen(uint256 concertId) {
-        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE);
+    modifier validConcert(uint256 concertId) {
+        require(concertContract.isValidConcert(concertId), "Invalid concert id");
         _;
     }
 
-    function joinQueue(uint256 concertId) public primaryMarketplaceOpen(concertId) {
+    
+    modifier primaryMarketplaceOpen(uint256 concertId) {
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Not at primary sale stage");
+        _;
+    }
+
+
+    function joinQueue(uint256 concertId) public validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer has not queued
-        require(!hasQueued[concertId][msg.sender]);
+        require(!hasQueued[concertId][msg.sender], "You are already in the queue");
         queue.push(msg.sender);
         hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
+    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, 
+        string[] memory passportIds) public payable validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == queue[0]);
-        // Valid concert id
-        require(concertId > 0);
-        require(concertContract.isValidConcert(concertId)); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
@@ -87,6 +96,15 @@ contract Marketplace is ERC721 {
     function withdraw() public onlyOwner {
         (bool success, ) = owner.call{value: address(this).balance}("");
         require(success);
+    }
+
+    //getting the owner
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+
+    function getHasQueued(uint256 concertId) public view returns (bool) {
+        return hasQueued[concertId][msg.sender];
     }
 
 }

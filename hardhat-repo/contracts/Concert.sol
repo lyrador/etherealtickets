@@ -87,6 +87,16 @@ contract Concert {
         concerts[concertID].stage = nextStage;
     }
 
+    //updating the concert stage only
+    function updateConcertStage(
+        uint256 concertID
+    ) public onlyOwner {
+        require(concerts[concertID].id != 0, "Concert does not exist");
+        Stage nextStage = Stage(uint8(concerts[concertID].stage) + 1);
+        // concert organizer manually updates stage
+        concerts[concertID].stage = nextStage;
+    }
+
     //deleting the concert
     function deleteConcert(uint256 concertID) public onlyOwner {
         require(concerts[concertID].id != 0, "Concert does not exist");
