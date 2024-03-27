@@ -55,8 +55,9 @@ describe("SecondaryMarketplace", function () {
         console.log("PrimaryMarket deployed to: ", primaryMarket.target);
         console.log("SecondaryMarket deployed to: ", secondaryMarket.target);
 
-        // CONCERT AND TICKET CREATION
-        let createConcert = await createTestConcert();
+        // ----- CONCERT AND TICKET CREATION -----
+        // Create test concert
+        await createTestConcert();
 
         // Verify that concert is created correctly at initialization stage
         expect(await concert.getConcertID(1)).to.equal(1);
@@ -72,15 +73,23 @@ describe("SecondaryMarketplace", function () {
         // Verify that stage is updated to PRIMARY_SALE
         expect(await concert.getConcertStage(1)).to.equal(stages.PRIMARY_SALE);
 
-        const initialBuyerBal = await ethers.provider.getBalance(addr1);
-        let joinQueue = await primaryMarket.connect(addr1).joinQueue(1);
-        let buyTicket = await primaryMarket.connect(addr1).buyTicket(1, [1], ["S1234567A"], {value: oneEth});
+        // Use this constant ticket cost to set price of ticket for testing, set commission fee for buying ticket
+        const standardisedTicketCost = oneEth;
+        const commissionFeePrimaryMarket = 0;
+
+        // Buy ticket from primary marketplace
+        await primaryMarket.connect(addr1).joinQueue(1);
+        const initialBuyerBal = await ethers.provider.getBalance(addr1); // Get initial buyer balance before buying ticket
+        let buyTicketTx = await primaryMarket.connect(addr1).buyTicket(1, [1], ["S1234567A"], {value: standardisedTicketCost});
+
+        // Calculate gas cost for buy ticket transactions
+        const buyTicketTxReceipt = await buyTicketTx.wait();
+        const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
 
         // Verify that ticket owner has bought ticket successfully
         expect(await ticket.getTicketOwner(1)).to.equal(addr1);
-        // const finalBuyerBal = await ethers.provider.getBalance(addr1);
-        // let commissionFeePrimaryMarket = 0
-        // expect(finalBuyerBal).to.equal(initialBuyerBal - BigInt(commissionFeePrimaryMarket) - oneEth);
+        const finalBuyerBal = await ethers.provider.getBalance(addr1);
+        expect(finalBuyerBal).to.equal(initialBuyerBal - standardisedTicketCost - BigInt(commissionFeePrimaryMarket) - buyTicketGas);
     });
 
     it("Should create secondary market", async function () {
@@ -94,7 +103,7 @@ describe("SecondaryMarketplace", function () {
         expect(await concert.getConcertStage(1)).to.equal(stages.SECONDARY_SALE); 
 
         // Verify that secondary marketplace can be created successfully
-        let createSecondaryMarketplace = await secondaryMarket.createSecondaryMarketplace(1);
+        await secondaryMarket.createSecondaryMarketplace(1);
     });
 
     it("Should list ticket", async function () {
