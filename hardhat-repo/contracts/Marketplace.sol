@@ -4,6 +4,8 @@ import "./Concert.sol";
 import "./Ticket.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+import "hardhat/console.sol";
+
 contract Marketplace is ERC721 {
 
     address owner; // Concert Organizer
@@ -15,6 +17,8 @@ contract Marketplace is ERC721 {
     mapping(uint256 => mapping(address => bool)) hasQueued;
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
     mapping(uint256 => uint256[]) seatsTaken;
+
+    event TicketAmt(uint256 amt);
 
     constructor(Concert concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
@@ -55,22 +59,25 @@ contract Marketplace is ERC721 {
     function buyTicket(uint256 concertId, uint24[] memory seatNumbers, 
         string[] memory passportIds) public payable validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
-        require(msg.sender == queue[0]);
+        require(msg.sender == queue[0], "Buyer not at the front of the queue");
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
-            require(seatNumbers[i] > 0);
             require(concertContract.isValidSeat(concertId, seatNumbers[i]));
             // Seat is not taken
-            require(seatTaken[concertId][seatNumbers[i]] == address(0));
+            require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat is taken");
 
             amtToPay += concertContract.getSeatCost(concertId, seatNumbers[i]);
         }
 
+        console.log("Amount: %s", amtToPay);
+
+        emit TicketAmt(amtToPay);
+
         // Eth sent is enough
-        require(msg.value >= amtToPay);
+        require(msg.value >= (amtToPay * 1 ether), "Insufficient eth sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
@@ -105,6 +112,10 @@ contract Marketplace is ERC721 {
 
     function getHasQueued(uint256 concertId) public view returns (bool) {
         return hasQueued[concertId][msg.sender];
+    }
+
+    function getSeatAddress(uint256 concertId, uint256 seatId) public view returns (address) {
+        return seatTaken[concertId][seatId];
     }
 
 }
