@@ -75,6 +75,16 @@ contract Concert {
         concerts[concertID].salesDate = _salesDate;
     }
 
+    //updating the concert stage only
+    function updateConcertStage(
+        uint256 concertID
+    ) public onlyOwner {
+        require(concerts[concertID].id != 0, "Concert does not exist");
+        Stage nextStage = Stage(uint8(concerts[concertID].stage) + 1);
+        // concert organizer manually updates stage
+        concerts[concertID].stage = nextStage;
+    }
+
     //deleting the concert
     function deleteConcert(uint256 concertID) public onlyOwner {
         require(concerts[concertID].id != 0, "Concert does not exist");
@@ -103,7 +113,7 @@ contract Concert {
     // }
 
     //getting the total cost of the concert based on the tickets and the cost of each ticket
-    function getSeatCost(uint256 concertID, uint256 seatNumber) public view returns (uint256) {
+    function getSeatCost(uint256 concertID, uint24 seatNumber) public view returns (uint256) {
         require(concerts[concertID].id != 0, "Concert does not exist");
         require(seatNumber <= getTotalTickets(concertID), "Seat number is not avaliable");
 
@@ -124,7 +134,7 @@ contract Concert {
         require(concerts[concertID].id != 0, "Concert does not exist");
 
         uint24 totalTickets = 0;
-        uint24 numOfCategory = concerts[concertID].categorySeatNumber.length;
+        uint256 numOfCategory = concerts[concertID].categorySeatNumber.length;
         for (uint256 i = 0; i < numOfCategory; i++) {
             totalTickets += concerts[concertID].categorySeatNumber[i];
         }
