@@ -27,7 +27,7 @@ contract Ticket {
         concertContract = Concert(_concertAddress);
     }
 
-    function createTicket(uint256 ticketId, uint256 concertId, string category, uint256 cost, string[] _passportIds) public { 
+    function createTicket(uint256 ticketId, uint256 concertId, string category, uint256 cost, string passportId) public { 
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
         require(concertContract.getOwner() == msg.sender, "Only the concert owner can create tickets");
 
