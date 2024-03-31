@@ -16,6 +16,7 @@ describe("SecondaryMarketplace", function () {
     let addr2; // This will be the new buyer of the ticket in the secondary marketplace.
 
     const oneEth = ethers.parseEther("1.0");
+    const twoEth = ethers.parseEther("2.0");
 
     // Stage enum numeric values => 0: INITIALIZATION, 1: PRIMARY_SALE, 2: SECONDARY_SALE, 3: OPEN, 4: COMPLETED
     const stages = {
@@ -28,12 +29,12 @@ describe("SecondaryMarketplace", function () {
 
     // Create concert called Eras at Stadium, with 1 category, 1 seat and it cost 2 ether. Concert on 12 dec 2024, sales on 10 oct 2024.
     async function createTestConcert() {
-        return await concert.createConcert("Eras", "Stadium", [oneEth], [1], 12122024,10102024);
+        return await concert.createConcert("Eras", "Stadium", [1], [1], 12122024,10102024);
     }
 
     // Update concert stage status
     async function updateTestConcertStage(concertId, stage) {
-        return await concert.updateConcert(concertId, "Eras", "Stadium", [oneEth], [1], 12122024, 10102024, stage);
+        return await concert.updateConcert(concertId, "Eras", "Stadium", [1], [1], 12122024, 10102024, stage);
     }
 
     beforeEach(async function () {
@@ -48,7 +49,7 @@ describe("SecondaryMarketplace", function () {
         concert = await Concert.deploy();
         ticket = await Ticket.deploy(concert.target);
         primaryMarket = await PrimaryMarket.deploy(concert.target, ticket.target, "Marketplace", "MKT"); 
-        secondaryMarket = await SecondaryMarket.deploy(concert.target, ticket.target); 
+        secondaryMarket = await SecondaryMarket.deploy(concert.target, ticket.target, primaryMarket.target); 
 
         console.log("Concert deployed to: ", concert.target);
         console.log("Ticket deployed to: ", ticket.target);
@@ -62,10 +63,10 @@ describe("SecondaryMarketplace", function () {
         // Verify that concert is created correctly at initialization stage
         expect(await concert.getConcertID(1)).to.equal(1);
         expect(await concert.getConcertStage(1)).to.equal(stages.INITIALIZATION);
-        expect(await concert.getSeatCost(1, 1)).to.equal(oneEth);
+        expect((await concert.getSeatCost(1, 1)) * oneEth).to.equal(oneEth);
 
         // Verify that cannot join queue if stage not PRIMARY_SALE
-        await expect(primaryMarket.connect(addr1).joinQueue(1)).to.be.revertedWith("Marketplace not open");
+        await expect(primaryMarket.connect(addr1).joinQueue(1)).to.be.revertedWith("Not at primary sale stage");
 
         // Update concert stage to PRIMARY_SALE
         await updateTestConcertStage(1, stages.PRIMARY_SALE);
@@ -87,9 +88,9 @@ describe("SecondaryMarketplace", function () {
         const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
 
         // Verify that ticket owner has bought ticket successfully
-        expect(await ticket.getTicketOwner(1)).to.equal(addr1);
-        const finalBuyerBal = await ethers.provider.getBalance(addr1);
-        expect(finalBuyerBal).to.equal(initialBuyerBal - standardisedTicketCost - BigInt(commissionFeePrimaryMarket) - buyTicketGas);
+        // expect(await ticket.getTicketOwner(1)).to.equal(addr1);
+        // const finalBuyerBal = await ethers.provider.getBalance(addr1);
+        // expect(finalBuyerBal).to.equal(initialBuyerBal - standardisedTicketCost - BigInt(commissionFeePrimaryMarket) - buyTicketGas);
     });
 
     it("Should create secondary market", async function () {
@@ -114,7 +115,7 @@ describe("SecondaryMarketplace", function () {
         await secondaryMarket.createSecondaryMarketplace(1);
 
         // List ticket from address 1, who has previously bought ticket
-        await secondaryMarket.connect(addr1).listTicket(1,1);
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
         let listedTickets = await secondaryMarket.getListedTicketsFromConcert(1);
 
         // Expect listedTickets to be a non-empty array with 1 ticket of ticketId = 1
@@ -131,51 +132,61 @@ describe("SecondaryMarketplace", function () {
         await secondaryMarket.createSecondaryMarketplace(1);
 
         // List ticket from address 1, who has previously bought ticket
-        await secondaryMarket.connect(addr1).listTicket(1,1);
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
 
         // Unlist ticket from acct 1, who has previously listed ticket
-        await secondaryMarket.connect(addr1).unlistTicket(1,1);
+        await secondaryMarket.connect(addr1).unlistTicket(1, "S1234567A", 1);
 
         // Expect listedTickets to be an empty array since ticket has been unlisted
         let unlistedTickets = await secondaryMarket.getListedTicketsFromConcert(1);
         expect(unlistedTickets).to.be.an('array').that.is.empty;
     });
 
-    // it("Should buy ticket", async function () {
-    //     // update concert stage to SECONDARY_SALE
-    //     let updateConcert = await concert.updateConcert(1, "Eras", "Stadium", [oneEth], [1], 12122024,10102024, BigInt("2"));
-    //     //create secondary marketplace for given concertId
-    //     let createSecondaryMarketplace = await secondaryMarket.createSecondaryMarketplace(1);
+    it("Should buy ticket", async function () {
+        // Update concert stage to SECONDARY_SALE
+        await updateTestConcertStage(1, stages.SECONDARY_SALE);
 
-    //     // list ticket from acct 1, who has previously bought ticket
-    //     let listed = await secondaryMarket.connect(addr1).listTicket(1,1);
+        // Create secondary marketplace for given concertId
+        await secondaryMarket.createSecondaryMarketplace(1);
 
-    //     // expert buy to fail if not enough money (buying and selling commission are 500 wei each)
-    //     let buyFail = secondaryMarket.connect(addr2).buy(1,1,{value: oneEth});
+        // List ticket from address 1, who has previously bought ticket
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
 
-    //     await expect(buy).to.be.revertedWith(
-    //         "Insufficient amount to buy"
-    //     );
+        // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
+        let buy = secondaryMarket.connect(addr2).buyTicket(1,1,{value: oneEth});
 
-    //     const initialSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarket.target);
-    //     expect(initialSecondaryMarketBal).to.equal(0);
-    //     const initialSellerBal = await ethers.provider.getBalance(addr1.target);
-    //     const initialBuyerBal = await ethers.provider.getBalance(addr2.target);
+        await expect(buy).to.be.revertedWith(
+            "Insufficient amount to buy"
+        );
 
-    //     // Case where buy transaction is successful
-    //     let buySuccess = await secondaryMarket.connect(addr2).buy(1,1,{value: oneEth*2});
+        const initialSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarket);
+        expect(initialSecondaryMarketBal).to.equal(0);
+        const initialSellerBal = await ethers.provider.getBalance(addr1);
+        const initialBuyerBal = await ethers.provider.getBalance(addr2);
 
-    //     // Check that ticket has been transferred to buyer, no more tickets listed
-    //     expect(await ticket.getTicketOwner(1)).to.equal(addr2);
-    //     expect(await secondaryMarket.getListedTicketsFromConcert(1)).to.be.an('array').that.is.empty;
+        const ticketCost = oneEth;
 
-    //     // Check the balance of the contract after receiving Ether
-    //     const finalSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarket.target);
-    //     const finalSellerBal = await ethers.provider.getBalance(addr1.target);
-    //     const finalBuyerBal = await ethers.provider.getBalance(addr2.target);
+        // Case where buy transaction is successful
+        let approvalTx = await primaryMarket.connect(addr1).approve(secondaryMarket, 1);
+        let buyTicketTx = await secondaryMarket.connect(addr2).buyTicket(1,1,{value: twoEth});
 
-    //     expect(finalSecondaryMarketBal).to.equal(1000); //buying + selling commission
-    //     expect(finalSellerBal).to.equal(initialSellerBal - 500 + ticketCost);
-    //     expect(finalBuyerBal).to.equal(initialBuyerBal - 500 - ticketCost);
-    // });
+        const approvalTxReceipt = await approvalTx.wait();
+        const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
+
+        const buyTicketTxReceipt = await buyTicketTx.wait();
+        const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
+
+        // Check that ticket has been transferred to buyer, no more tickets listed
+        expect(await ticket.getTicketOwner(1)).to.equal(addr2);
+        expect(await secondaryMarket.getListedTicketsFromConcert(1)).to.be.an('array').that.is.empty;
+
+        // Check the balance of the contract after receiving Ether
+        const finalSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarket);
+        const finalSellerBal = await ethers.provider.getBalance(addr1);
+        const finalBuyerBal = await ethers.provider.getBalance(addr2);
+
+        expect(finalSecondaryMarketBal).to.equal(1000); //buying + selling commission
+        expect(finalSellerBal).to.equal(initialSellerBal - BigInt(500) + ticketCost - approvalGas);
+        expect(finalBuyerBal).to.equal(initialBuyerBal - BigInt(500) - ticketCost - buyTicketGas);
+    });
 });

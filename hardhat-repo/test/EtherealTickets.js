@@ -14,8 +14,13 @@ describe("EtherealTickets", function () {
 
     const concertContract = await ethers.deployContract("Concert");
 
+    const ticketContract = await ethers.deployContract("Ticket", [
+      concertContract.target,
+    ]);
+
     const marketplaceContract = await ethers.deployContract("Marketplace", [
       concertContract.target,
+      ticketContract.target,
       "EtherealTickets",
       "ET",
     ]);

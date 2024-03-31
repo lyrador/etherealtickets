@@ -33,7 +33,7 @@ contract Ticket {
     function createTicket(
         uint256 ticketId, 
         uint256 concertId, 
-        address prevTicketOwner,
+        address buyer,
         uint24 category, 
         uint256 cost, 
         string memory passportId) public { 
@@ -49,9 +49,9 @@ contract Ticket {
             passportId: passportId // assignment unique passportId of current holder
         });
 
-        ticketOwners[ticketId] = msg.sender; // Marking the ticket's creator as its initial owner (buyer)
+        ticketOwners[ticketId] = buyer; // Marking the ticket's creator as its initial owner (buyer)
 
-        emit TicketCreated(ticketId, concertId, msg.sender, category, cost, passportId);
+        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
     }
 
     function getOwner(uint256 ticketId) public view returns (address) {
@@ -77,11 +77,11 @@ contract Ticket {
 
     // IMPORTANT: nd to add a check to make sure got access right to update
     function updateTicketOwner(uint256 ticketId, address newOwner) public {
-        ticketOwner[ticketId] = newOwner;
+        ticketOwners[ticketId] = newOwner;
     }
 
     function getTicketOwner(uint256 ticketId) public view returns (address) {
-        return ticketOwner[ticketId];
+        return ticketOwners[ticketId];
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {

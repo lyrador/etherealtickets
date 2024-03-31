@@ -104,7 +104,7 @@ contract Concert {
     }
 
     //getting the concert id
-    function getconcertId(uint256 concertId) public view returns (uint256) {
+    function getConcertID(uint256 concertId) public view returns (uint256) {
     require(concerts[concertId].id != 0, "Concert does not exist");
     return concertId;
     }

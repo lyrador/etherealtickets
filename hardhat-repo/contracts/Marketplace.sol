@@ -20,8 +20,9 @@ contract Marketplace is ERC721 {
 
     event TicketAmt(uint256 amt);
 
-    constructor(Concert concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
+    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
+        ticketContract = ticketAddress;
         owner = msg.sender;
     }
 
