@@ -47,19 +47,21 @@ contract SecondaryMarketplace is StateDefinition {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
-        // TO FIX: ticketContract.isValidTicket(ticketId);
-        // require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
-        // require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        //require(ticketContract.getConcertIdFromTicketId(ticketId) == concertId, "Ticket not for this concert");
+    function listTicket(uint256 ticketId, string memory passportId) public {
+        // ticketContract.isValidTicket(ticketId); why? 
+        require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
+        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
+        require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
 
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
-        //require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
-        //require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        //uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
+    function unlistTicket(uint256 ticketId, string memory passportId) public {
+        require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
+        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
+        require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
         
         // unlist ticket on secondary marketplace
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);

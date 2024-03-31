@@ -4,6 +4,8 @@ import "./Concert.sol";
 import "./Ticket.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+import "hardhat/console.sol";
+
 contract Marketplace is ERC721 {
 
     address owner; // Concert Organizer
@@ -16,34 +18,48 @@ contract Marketplace is ERC721 {
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
     mapping(uint256 => uint256[]) seatsTaken;
 
-    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
-        string memory _symbol) ERC721(_name, _symbol) public {
+    event TicketAmt(uint256 amt);
+
+    constructor(Concert concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
-        ticketContract = ticketAddress;
         owner = msg.sender;
     }
+
+    // constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
+    //     string memory _symbol) ERC721(_name, _symbol) public {
+    //     concertContract = concertAddress;
+    //     ticketContract = ticketAddress;
+    //     owner = msg.sender;
+    // }
 
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
     }
 
-    // can be added to below functions
-    modifier primaryMarketplaceOpen(uint256 concertId) {
-        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Marketplace not open");
+    modifier validConcert(uint256 concertId) {
+        require(concertContract.isValidConcert(concertId), "Invalid concert id");
         _;
     }
 
-    function joinQueue(uint256 concertId) public primaryMarketplaceOpen(concertId) {
+    
+    modifier primaryMarketplaceOpen(uint256 concertId) {
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Not at primary sale stage");
+        _;
+    }
+
+
+    function joinQueue(uint256 concertId) public validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer has not queued
-        require(!hasQueued[concertId][msg.sender]);
+        require(!hasQueued[concertId][msg.sender], "You are already in the queue");
         queue.push(msg.sender);
         hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, string[] memory passportIds) public payable primaryMarketplaceOpen(concertId) {
+    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, 
+        string[] memory passportIds) public payable validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
-        require(msg.sender == queue[0], "Buyer not at front of queue");
+        require(msg.sender == queue[0], "Buyer not at the front of the queue");
         // Valid concert id
         require(concertId > 0, "Invalid concertId");
         require(concertContract.isValidConcert(concertId), "Invalid concertId (2)"); // use isValidConcert method
@@ -53,15 +69,23 @@ contract Marketplace is ERC721 {
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
             require(seatNumbers[i] > 0, "Seat numbers must be greater than 0");
-            require(concertContract.isValidSeat(concertId, seatNumbers[i]), "Seat numbers are invalid");
+            require(concertContract.isValidSeat(concertId, seatNumbers[i]), "Invalid seat ID");
             // Seat is not taken
-            require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat must be empty");
+            require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat is taken");
 
-            amtToPay += concertContract.getSeatCost(concertId, seatNumbers[i]);
+            // Pull category and cost for the seat
+            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
+            uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
+
+            amtToPay += cost;
         }
 
+        console.log("Amount: %s", amtToPay);
+
+        emit TicketAmt(amtToPay);
+
         // Eth sent is enough
-        require(msg.value >= amtToPay, "Not enough amount sent");
+        require(msg.value >= (amtToPay * 1 ether), "Insufficient eth sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
@@ -71,9 +95,10 @@ contract Marketplace is ERC721 {
             ticketId++;
             _safeMint(msg.sender, ticketId);
             // Create ticket object
-            string memory passport = passportIds[i];
-            //ticketContract.createTicket(); // check what to pass in
-            ticketContract.updateTicketOwner(ticketId, msg.sender);
+            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
+            uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
+            string memory passportId = passportIds[i];
+            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId); 
         }
 
         /// Pop buyer from queue
@@ -88,6 +113,19 @@ contract Marketplace is ERC721 {
     function withdraw() public onlyOwner {
         (bool success, ) = owner.call{value: address(this).balance}("");
         require(success);
+    }
+
+    //getting the owner
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+
+    function getHasQueued(uint256 concertId) public view returns (bool) {
+        return hasQueued[concertId][msg.sender];
+    }
+
+    function getSeatAddress(uint256 concertId, uint256 seatId) public view returns (address) {
+        return seatTaken[concertId][seatId];
     }
 
 }
