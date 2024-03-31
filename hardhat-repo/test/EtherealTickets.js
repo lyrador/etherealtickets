@@ -4,9 +4,6 @@ const {
 const { expect } = require("chai");
 
 const ONE_ETH = 10n ** 18n;
-const TWO_ETH = 10n ** 18n * 2n;
-const THREE_ETH = 10n ** 18n * 3n;
-const FOUR_ETH = 10n ** 18n * 4n;
 
 describe("EtherealTickets", function () {
   async function deployFixture() {
@@ -24,28 +21,57 @@ describe("EtherealTickets", function () {
     return { concertContract, marketplaceContract, owner, addr1, addr2 };
   }
 
-  async function createConcertFixture(concertContract) {
+  async function joinQueueFixture(concertContract) {
+    // Concert 1: Stage = PRIMARY_SALE
     await concertContract.createConcert(
       "Taylor Swift Day 1",
       "National Stadium",
-      [1, 2, 3, 4],
-      [100, 200, 300, 400],
+      [3, 2, 1],
+      [10, 20, 30],
       1,
       1
     );
     await concertContract.updateConcertStage(1);
 
+    // Concert 2: Stage = SECONDARY_SALE
     await concertContract.createConcert(
       "Taylor Swift Day 2",
       "National Stadium",
-      [1, 2, 3, 4],
-      [100, 200, 300, 400],
+      [3, 2, 1],
+      [10, 20, 30],
+      2,
+      2
+    );
+    await concertContract.updateConcertStage(2);
+    await concertContract.updateConcertStage(2);
+
+    // Concert 3: Stage = INITIALIZATION
+    await concertContract.createConcert(
+      "Taylor Swift Day 2",
+      "National Stadium",
+      [3, 2, 1],
+      [10, 20, 30],
       2,
       2
     );
   }
 
-  async function buyTicketsFixture(marketplaceContract, addr1, addr2) {
+  async function buyTicketFixture(
+    concertContract,
+    marketplaceContract,
+    addr1,
+    addr2
+  ) {
+    await concertContract.createConcert(
+      "Taylor Swift Day 1",
+      "National Stadium",
+      [3, 2, 1],
+      [100, 200, 300],
+      1,
+      1
+    );
+    await concertContract.updateConcertStage(1);
+
     await marketplaceContract.connect(addr1).joinQueue(1);
     await marketplaceContract.connect(addr2).joinQueue(1);
   }
@@ -68,66 +94,80 @@ describe("EtherealTickets", function () {
     const INVALID_SEATS = [1001];
     const PASSPORTS = ["12345678", "12345678"];
 
-    it("Join queue", async function () {
+    it("Join queue for concert at primary sales stage", async function () {
       const { concertContract, marketplaceContract, addr1 } = await loadFixture(
         deployFixture
       );
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
+      const joinQueueFixtureArrow = async () =>
+        joinQueueFixture(concertContract);
+      await loadFixture(joinQueueFixtureArrow);
       await marketplaceContract.connect(addr1).joinQueue(1);
       const queued = await marketplaceContract.connect(addr1).getHasQueued(1);
       expect(queued).to.equal(true);
+    });
+
+    it("Join queue for concert at secondary sales stage", async function () {
+      const { concertContract, marketplaceContract, addr1 } = await loadFixture(
+        deployFixture
+      );
+      const joinQueueFixtureArrow = async () =>
+        joinQueueFixture(concertContract);
+      await loadFixture(joinQueueFixtureArrow);
+      await marketplaceContract.connect(addr1).joinQueue(2);
+      const queued = await marketplaceContract.connect(addr1).getHasQueued(2);
+      expect(queued).to.equal(true);
+    });
+
+    it("Cannot join queue for concert not at primary or secondary sales stage", async function () {
+      const { concertContract, marketplaceContract, addr1 } = await loadFixture(
+        deployFixture
+      );
+      const joinQueueFixtureArrow = async () =>
+        joinQueueFixture(concertContract);
+      await loadFixture(joinQueueFixtureArrow);
+
+      await expect(
+        marketplaceContract.connect(addr1).joinQueue(3)
+      ).to.be.revertedWith("Primary marketplace is closed");
     });
 
     it("Cannot join queue again for same concert", async function () {
       const { concertContract, marketplaceContract, addr1 } = await loadFixture(
         deployFixture
       );
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
+      const joinQueueFixtureArrow = async () =>
+        joinQueueFixture(concertContract);
+      await loadFixture(joinQueueFixtureArrow);
       await marketplaceContract.connect(addr1).joinQueue(1);
       await expect(
         marketplaceContract.connect(addr1).joinQueue(1)
       ).to.be.revertedWith("You are already in the queue");
     });
 
-    it("Cannot join queue for concert that before primary sale stage", async function () {
-      const { concertContract, marketplaceContract, addr1 } = await loadFixture(
-        deployFixture
-      );
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
-
-      await expect(
-        marketplaceContract.connect(addr1).joinQueue(2)
-      ).to.be.revertedWith("Not at primary sale stage");
-    });
-
     it("Cannot join queue for invalid concert id", async function () {
       const { concertContract, marketplaceContract, addr1 } = await loadFixture(
         deployFixture
       );
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
+      const joinQueueFixtureArrow = async () =>
+        joinQueueFixture(concertContract);
+      await loadFixture(joinQueueFixtureArrow);
 
       await expect(
-        marketplaceContract.connect(addr1).joinQueue(3)
+        marketplaceContract.connect(addr1).joinQueue(4)
       ).to.be.revertedWith("Invalid concert id");
     });
 
-    it("Buy tickets for 2 eth", async function () {
+    it("Address 1 and 2 buy 2 tickets each", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
         await loadFixture(deployFixture);
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
 
-      const marketplaceFixture = async () =>
-        buyTicketsFixture(marketplaceContract, addr1, addr2);
-      await loadFixture(marketplaceFixture);
+      const buyTicketFixtureArrow = async () =>
+        buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
+      await loadFixture(buyTicketFixtureArrow);
 
       await marketplaceContract
         .connect(addr1)
-        .buyTicket(1, SEATS, PASSPORTS, { value: TWO_ETH });
+        .buyTicket(1, SEATS, PASSPORTS, { value: ONE_ETH * 6n });
 
       // check if seat address is assigned correctly
       const seat1Addr = await marketplaceContract.getSeatAddress(1, 1);
@@ -139,12 +179,12 @@ describe("EtherealTickets", function () {
       await expect(
         marketplaceContract
           .connect(addr1)
-          .buyTicket(1, SEATS_SECOND, PASSPORTS, { value: TWO_ETH })
+          .buyTicket(1, SEATS_SECOND, PASSPORTS, { value: ONE_ETH * 6n })
       ).to.be.revertedWith("Buyer not at the front of the queue");
 
       await marketplaceContract
         .connect(addr2)
-        .buyTicket(1, SEATS_SECOND, PASSPORTS, { value: TWO_ETH });
+        .buyTicket(1, SEATS_SECOND, PASSPORTS, { value: ONE_ETH * 6n });
 
       // check if seat address is assigned correctly
       const seat3Addr = await marketplaceContract.getSeatAddress(1, 3);
@@ -156,67 +196,59 @@ describe("EtherealTickets", function () {
     it("Cannot buy ticket if not first in queue", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
         await loadFixture(deployFixture);
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
 
-      const marketplaceFixture = async () =>
-        buyTicketsFixture(marketplaceContract, addr1, addr2);
-      await loadFixture(marketplaceFixture);
+      const buyTicketFixtureArrow = async () =>
+        buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
+      await loadFixture(buyTicketFixtureArrow);
 
       await expect(
         marketplaceContract
           .connect(addr2)
-          .buyTicket(1, SEATS, PASSPORTS, { value: TWO_ETH })
+          .buyTicket(1, SEATS, PASSPORTS, { value: ONE_ETH * 6n })
       ).to.be.revertedWith("Buyer not at the front of the queue");
     });
 
     it("Cannot buy ticket if invalid seat id", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
         await loadFixture(deployFixture);
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
 
-      const marketplaceFixture = async () =>
-        buyTicketsFixture(marketplaceContract, addr1, addr2);
-      await loadFixture(marketplaceFixture);
+      const buyTicketFixtureArrow = async () =>
+        buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
+      await loadFixture(buyTicketFixtureArrow);
 
       await expect(
         marketplaceContract
           .connect(addr1)
-          .buyTicket(1, INVALID_SEATS, PASSPORTS, { value: TWO_ETH })
+          .buyTicket(1, INVALID_SEATS, PASSPORTS, { value: ONE_ETH * 6n })
       ).to.be.revertedWith("Seat does not exist");
     });
 
     it("Cannot buy ticket if seat is taken", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
         await loadFixture(deployFixture);
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
 
-      const marketplaceFixture = async () =>
-        buyTicketsFixture(marketplaceContract, addr1, addr2);
-      await loadFixture(marketplaceFixture);
+      const buyTicketFixtureArrow = async () =>
+        buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
+      await loadFixture(buyTicketFixtureArrow);
 
       await marketplaceContract
         .connect(addr1)
-        .buyTicket(1, SEATS, PASSPORTS, { value: TWO_ETH });
+        .buyTicket(1, SEATS, PASSPORTS, { value: ONE_ETH * 6n });
 
       await expect(
         marketplaceContract
           .connect(addr2)
-          .buyTicket(1, SEATS, PASSPORTS, { value: TWO_ETH })
+          .buyTicket(1, SEATS, PASSPORTS, { value: ONE_ETH * 6n })
       ).to.be.revertedWith("Seat is taken");
     });
 
     it("Cannot buy ticket if insufficient eth sent", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
         await loadFixture(deployFixture);
-      const concertFixture = async () => createConcertFixture(concertContract);
-      await loadFixture(concertFixture);
 
-      const marketplaceFixture = async () =>
-        buyTicketsFixture(marketplaceContract, addr1, addr2);
-      await loadFixture(marketplaceFixture);
+      const buyTicketFixtureArrow = async () =>
+        buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
+      await loadFixture(buyTicketFixtureArrow);
 
       await expect(
         marketplaceContract

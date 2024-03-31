@@ -44,7 +44,8 @@ contract Marketplace is ERC721 {
 
     
     modifier primaryMarketplaceOpen(uint256 concertId) {
-        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Not at primary sale stage");
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE 
+        || concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Primary marketplace is closed");
         _;
     }
 
