@@ -244,7 +244,7 @@ describe("EtherealTickets", function () {
 
     it("Cannot buy ticket if insufficient eth sent", async function () {
       const { concertContract, marketplaceContract, addr1, addr2 } =
-        await joinQueueFixture(deployFixture);
+        await loadFixture(deployFixture);
 
       const buyTicketFixtureArrow = async () =>
         buyTicketFixture(concertContract, marketplaceContract, addr1, addr2);
@@ -262,36 +262,32 @@ describe("EtherealTickets", function () {
     // Test for updating a concert
     it("Should allow the owner to update a concert", async function () {
       const { concertContract } = await loadFixture(deployFixture);
-  
+
       await joinQueueFixture(concertContract);
       await concertContract.updateConcert(
-          1, 
-          "Updated Taylor Swift Day 1", 
-          "Updated National Stadium", 
-          [150, 250, 350, 450], 
-          [150, 250, 350, 450], 
-          3, 
-          4,
+        1,
+        "Updated Taylor Swift Day 1",
+        "Updated National Stadium",
+        [150, 250, 350, 450],
+        [150, 250, 350, 450],
+        3,
+        4
       );
-      //for this, i need to have getters for every part of the concert so that i can do the .to.equal 
-
+      //for this, i need to have getters for every part of the concert so that i can do the .to.equal
     });
-  
-  
 
     // Test for deleting a concert and checking whether it exists or not
     it("Should confirm that a concert no longer exists after deletion", async function () {
       const { concertContract } = await loadFixture(deployFixture);
-  
+
       await joinQueueFixture(concertContract);
-  
+
       await concertContract.deleteConcert(1);
-  
+
       const exists = await concertContract.isValidConcert(1);
-  
+
       expect(exists).to.equal(false);
-  });
-  
+    });
 
     //test for deleting a non existent concert
     it("Should revert if trying to delete a non-existent concert", async function () {
@@ -308,23 +304,23 @@ describe("EtherealTickets", function () {
 
       await joinQueueFixture(concertContract); // Ensure there are concerts to work with
       // Attempt to delete a concert as a non-owner
-      await expect(concertContract.connect(addr1).deleteConcert(1))
-        .to.be.revertedWith("Caller is not the owner");
+      await expect(
+        concertContract.connect(addr1).deleteConcert(1)
+      ).to.be.revertedWith("Caller is not the owner");
     });
 
     //test for getting the seat cost
     it("Should return the correct seat cost based on seat number", async function () {
       const { concertContract } = await loadFixture(deployFixture);
-  
+
       await joinQueueFixture(concertContract);
-  
-      const costForSeat1 = await concertContract.getSeatCost(1, 1); 
+
+      const costForSeat1 = await concertContract.getSeatCost(1, 1);
       expect(costForSeat1).to.equal(3); //
-  
+
       const costForSeat101 = await concertContract.getSeatCost(1, 11); // 101st seat, should be in the second category
       expect(costForSeat101).to.equal(2);
-  });
-  
+    });
 
     //test for getConcertID
     it("Should return the same concert ID if the concert exists", async function () {
@@ -340,29 +336,31 @@ describe("EtherealTickets", function () {
     });
 
     //test for gettingTotalTickets
-    it("Should return the total number of correct tickets", async function() {
+    it("Should return the total number of correct tickets", async function () {
       const { concertContract } = await loadFixture(deployFixture);
       await joinQueueFixture(concertContract);
-      const concertTotalTicketsForDay1 = await concertContract.getTotalTickets(1);
+      const concertTotalTicketsForDay1 = await concertContract.getTotalTickets(
+        1
+      );
       expect(concertTotalTicketsForDay1).to.equal(60);
       //double check with the group about how the category tickets are formed
     });
-  
 
     //test for getting category tickets
-    it("Should return the total number of correct tickets for a certain category", async function() {
+    it("Should return the total number of correct tickets for a certain category", async function () {
       const { concertContract } = await loadFixture(deployFixture);
       await joinQueueFixture(concertContract);
-  
+
       // Checking for category 1 in concert 1 to be equal to 100
-      const concertTotalTicketsForCategory1Day1 = await concertContract.getTotalTicketsForCategory(1, 1);
+      const concertTotalTicketsForCategory1Day1 =
+        await concertContract.getTotalTicketsForCategory(1, 1);
       expect(concertTotalTicketsForCategory1Day1).to.equal(10);
-  
+
       // Checking for category 1 in concert 2 to be equal to 100
-      const concertTotalTicketsForCategory1Day2 = await concertContract.getTotalTicketsForCategory(2, 1);
+      const concertTotalTicketsForCategory1Day2 =
+        await concertContract.getTotalTicketsForCategory(2, 1);
       expect(concertTotalTicketsForCategory1Day2).to.equal(10);
     });
-  
 
     //test for returning a concert ID
     it("Should return true for a valid concert ID", async function () {
@@ -372,6 +370,6 @@ describe("EtherealTickets", function () {
       // Assuming concert with ID 1 is created in the fixture
       const isValid = await concertContract.isValidConcert(1);
       expect(isValid).to.be.true;
-     });
+    });
   });
 });
