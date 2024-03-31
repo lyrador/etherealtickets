@@ -43,20 +43,20 @@ contract SecondaryMarketplace is StateDefinition {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId) public {
-        // TO FIX: ticketContract.isValidTicket(ticketId);
-        // require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
-        // require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
+    function listTicket(uint256 ticketId, string memory passportId) public {
+        ticketContract.isValidTicket(ticketId);
+        require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
+        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
         require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
 
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId) public {
-        //require(concertContract.isValidTicket(ticketId), "Ticket does not exist");
-        //require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
+    function unlistTicket(uint256 ticketId, string memory passportId) public {
+        require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
+        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
         require(secondaryMarketplaces[concertId].state == marketplaceState.Open, "Secondary marketplace is closed");
         
         // unlist ticket on secondary marketplace
