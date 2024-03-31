@@ -10,22 +10,20 @@ contract Ticket {
         uint256 ticketId;
         uint256 concertId;
         address prevTicketOwner;
-        string category;
+        uint24 category;
         uint256 cost; 
         string passportId; 
     }
 
-    uint256 public nextTicketId = 0; // counter for the next ticketId
-
     mapping(uint256 => Ticket) public tickets;
-    mapping(uint256 => address) public ticketOwner;
+    mapping(uint256 => address) public ticketOwners;
 
     event TicketCreated(
         uint256 indexed ticketId, 
         uint256 indexed concertId, 
-        string category, 
-        uint256 cost, 
         address owner,
+        uint24 category, 
+        uint256 cost, 
         string passportId); // consider using hashes of passportIds instead for privacy
 
     constructor(address _concertAddress) {
@@ -33,13 +31,14 @@ contract Ticket {
     }
 
     function createTicket(
+        uint256 ticketId, 
         uint256 concertId, 
-        string memory category, 
+        address prevTicketOwner,
+        uint24 category, 
         uint256 cost, 
         string memory passportId) public { 
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
         //require(concertContract.getOwner() == msg.sender, "Only the concert owner can create tickets");
-        uint256 ticketId = nextTicketId++; // ticketId increments with every new createTicket called
 
         tickets[ticketId] = Ticket({
             ticketId: ticketId,
@@ -50,14 +49,14 @@ contract Ticket {
             passportId: passportId // assignment unique passportId of current holder
         });
 
-        ticketOwner[ticketId] = msg.sender; // Marking the ticket's creator as its initial owner (buyer)
+        ticketOwners[ticketId] = msg.sender; // Marking the ticket's creator as its initial owner (buyer)
 
-        emit TicketCreated(ticketId, concertId, category, cost, msg.sender, passportId);
+        emit TicketCreated(ticketId, concertId, msg.sender, category, cost, passportId);
     }
 
     function getOwner(uint256 ticketId) public view returns (address) {
         require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
-        return ticketOwner[ticketId];
+        return ticketOwners[ticketId];
     }
 
     function validateTicket(uint256 ticketId, string memory passportId) public view returns (bool) {
@@ -77,7 +76,7 @@ contract Ticket {
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {
-        return ticketOwner[ticketId] != address(0);
+        return ticketOwners[ticketId] != address(0);
     }
 
     function getTicketCost(uint256 ticketId) public view returns (uint256) { 

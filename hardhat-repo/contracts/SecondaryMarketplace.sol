@@ -44,7 +44,7 @@ contract SecondaryMarketplace is StateDefinition {
 
     // reseller list ticket
     function listTicket(uint256 ticketId, string memory passportId) public {
-        ticketContract.isValidTicket(ticketId);
+        // ticketContract.isValidTicket(ticketId); why? 
         require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);

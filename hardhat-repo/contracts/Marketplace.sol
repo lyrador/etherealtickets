@@ -11,7 +11,7 @@ contract Marketplace is ERC721 {
     address owner; // Concert Organizer
     uint256 ticketId; // tokenId of NFT
     Concert concertContract;
-    //Ticket ticketContract;
+    Ticket ticketContract;
     address[] queue;
 
     mapping(uint256 => mapping(address => bool)) hasQueued;
@@ -65,11 +65,15 @@ contract Marketplace is ERC721 {
         
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
-            require(concertContract.isValidSeat(concertId, seatNumbers[i]));
+            require(concertContract.isValidSeat(concertId, seatNumbers[i]), "Invalid seat ID");
             // Seat is not taken
             require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat is taken");
 
-            amtToPay += concertContract.getSeatCost(concertId, seatNumbers[i]);
+            // Pull category and cost for the seat
+            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
+            uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
+
+            amtToPay += cost;
         }
 
         console.log("Amount: %s", amtToPay);
@@ -87,8 +91,10 @@ contract Marketplace is ERC721 {
             ticketId++;
             _safeMint(msg.sender, ticketId);
             // Create ticket object
-            string memory passport = passportIds[i];
-            //ticketContract.createTicket(); // check what to pass in
+            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
+            uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
+            string memory passportId = passportIds[i];
+            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId); 
         }
 
         /// Pop buyer from queue
