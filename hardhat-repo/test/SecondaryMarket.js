@@ -66,7 +66,7 @@ describe("SecondaryMarketplace", function () {
         expect((await concert.getSeatCost(1, 1)) * oneEth).to.equal(oneEth);
 
         // Verify that cannot join queue if stage not PRIMARY_SALE
-        await expect(primaryMarket.connect(addr1).joinQueue(1)).to.be.revertedWith("Not at primary sale stage");
+        await expect(primaryMarket.connect(addr1).joinQueue(1)).to.be.revertedWith("Primary marketplace is closed");
 
         // Update concert stage to PRIMARY_SALE
         await updateTestConcertStage(1, stages.PRIMARY_SALE);
@@ -115,7 +115,7 @@ describe("SecondaryMarketplace", function () {
         await secondaryMarket.createSecondaryMarketplace(1);
 
         // List ticket from address 1, who has previously bought ticket
-        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A");
         let listedTickets = await secondaryMarket.getListedTicketsFromConcert(1);
 
         // Expect listedTickets to be a non-empty array with 1 ticket of ticketId = 1
@@ -132,10 +132,10 @@ describe("SecondaryMarketplace", function () {
         await secondaryMarket.createSecondaryMarketplace(1);
 
         // List ticket from address 1, who has previously bought ticket
-        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A");
 
         // Unlist ticket from acct 1, who has previously listed ticket
-        await secondaryMarket.connect(addr1).unlistTicket(1, "S1234567A", 1);
+        await secondaryMarket.connect(addr1).unlistTicket(1, "S1234567A");
 
         // Expect listedTickets to be an empty array since ticket has been unlisted
         let unlistedTickets = await secondaryMarket.getListedTicketsFromConcert(1);
@@ -150,7 +150,7 @@ describe("SecondaryMarketplace", function () {
         await secondaryMarket.createSecondaryMarketplace(1);
 
         // List ticket from address 1, who has previously bought ticket
-        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A", 1);
+        await secondaryMarket.connect(addr1).listTicket(1, "S1234567A");
 
         // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
         let buy = secondaryMarket.connect(addr2).buyTicket(1,1,{value: oneEth});

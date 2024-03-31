@@ -5,7 +5,7 @@ import "./Ticket.sol";
 import "./Concert.sol";
 import "./Marketplace.sol";
 
-contract SecondaryMarketplace is StateDefinition {
+contract SecondaryMarketplace {
 
     //concertId to secondaryMarketplace
     mapping(uint256 => secondaryMarketplace) secondaryMarketplaces;
@@ -50,7 +50,7 @@ contract SecondaryMarketplace is StateDefinition {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId, string memory passportId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
+    function listTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
         // ticketContract.isValidTicket(ticketId); why? 
         require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
@@ -59,7 +59,7 @@ contract SecondaryMarketplace is StateDefinition {
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId, string memory passportId, uint256 concertId) public secondaryMarketplaceOpen(concertId) {
+    function unlistTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
         require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");
         require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
@@ -67,8 +67,6 @@ contract SecondaryMarketplace is StateDefinition {
         // unlist ticket on secondary marketplace
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
     }
-
-    // NEED TO IMPLEMENT TICKET.SOL BEFORE THIS CAN WORK
 
     function buyTicket(uint256 ticketId, uint256 concertId) public payable secondaryMarketplaceOpen(concertId) {
         require(ticketContract.isValidTicket(ticketId), "Ticket does not exist");

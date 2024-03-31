@@ -18,7 +18,7 @@ contract Concert {
         uint256 id;
         string name;
         string location;
-        uint256[] ticketCost;
+        uint256[] ticketCost; // change it to wei
         uint24[] categorySeatNumber;
         uint concertDate;
         uint salesDate;
