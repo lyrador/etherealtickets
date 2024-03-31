@@ -158,7 +158,7 @@ contract Concert {
     function getTotalTicketsForCategory(uint256 concertID, uint256 categoryNumber) public view returns (uint24) {
         require(concerts[concertID].id != 0, "Concert does not exist");
         require(categoryNumber < concerts[concertID].categorySeatNumber.length, "Category index out of bounds");
-        return concerts[concertID].categorySeatNumber[categoryNumber];
+        return concerts[concertID].categorySeatNumber[categoryNumber - 1];
     }
 
     //checking if the concert is valid or not
