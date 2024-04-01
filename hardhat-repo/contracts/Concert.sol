@@ -124,6 +124,37 @@ contract Concert {
     //     return cost;
     // }
 
+    //getting the name of the concert
+    function getName(uint256 concertId) public view returns (string memory) {
+        return concerts[concertId].name;
+    }
+
+    //getting the location of the concert
+    function getLocation(uint256 concertId) public view returns (string memory) {
+        return concerts[concertId].location;
+    }
+
+    //getting the array of the ticketcost of the concert
+    function getTicketCostArray(uint256 concertId) public view returns (uint256[] memory) {
+        return concerts[concertId].ticketCost;
+    }
+
+    //getting the array fo the categorySeats
+    function getCategorySeatArray(uint256 concertId) public view returns (uint24[] memory) {
+        return concerts[concertId].categorySeatNumber;
+    }
+
+    ///getting the concertDate of the concert
+    function getConcertDate(uint256 concertId) public view returns (uint) {
+        return concerts[concertId].concertDate;
+    }
+
+    //getting the salesDate of the concert
+    function getSalesDate(uint256 concertId) public view returns (uint) {
+        return concerts[concertId].concertDate;
+    }
+
+
     //getting the cost of the seat by iterating through the categories
     function getSeatCost(uint256 concertId, uint24 seatNumber) public view returns (uint256) {
         require(concerts[concertId].id != 0, "Concert does not exist");
