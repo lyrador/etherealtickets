@@ -72,8 +72,7 @@ contract Concert {
         uint256[] memory _ticketCost,
         uint24[] memory _categorySeatNumber,
         uint256 _concertDate,
-        uint256 _salesDate,
-        Stage nextStage
+        uint256 _salesDate
     ) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
         
@@ -84,7 +83,6 @@ contract Concert {
         concerts[concertId].concertDate = _concertDate;
         concerts[concertId].salesDate = _salesDate;
         // concert organizer manually updates stage
-        concerts[concertId].stage = nextStage;
     }
 
     //updating the concert stage only
@@ -108,21 +106,6 @@ contract Concert {
     require(concerts[concertId].id != 0, "Concert does not exist");
     return concertId;
     }
-
-    // //getting the total cost of the concert based on the tickets and the cost of each ticket
-    // function getConcertCost (uint256 concertId) public view returns (uint256) {
-    //     require(concerts[concertId].id != 0, "Concert does not exist");
-    //     require(concerts[concertId].categorySeatNumber.length === concerts[concertId].ticketCost.length, "Number of categorys and cost per category length does not match");
-
-    //     uint256 cost = 0;
-    //     uint256 lengthOfCategories = concerts[concertId].categorySeatNumber.length;
-
-    //     for (uint256 j = 0; j < lengthOfCategories; j++) {
-    //         cost += concerts[concertId].categorySeatNumber[j] * concerts[concertId].ticketCost[j]
-    //     }
-
-    //     return cost;
-    // }
 
     //getting the name of the concert
     function getName(uint256 concertId) public view returns (string memory) {
@@ -151,7 +134,7 @@ contract Concert {
 
     //getting the salesDate of the concert
     function getSalesDate(uint256 concertId) public view returns (uint) {
-        return concerts[concertId].concertDate;
+        return concerts[concertId].salesDate;
     }
 
 
