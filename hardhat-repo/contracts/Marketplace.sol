@@ -87,7 +87,7 @@ contract Marketplace is ERC721 {
         emit TicketAmt(amtToPay);
 
         // Eth sent is enough
-        require(msg.value >= (amtToPay * 1 ether), "Insufficient eth sent");
+        require(msg.value >= amtToPay, "Insufficient eth sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
