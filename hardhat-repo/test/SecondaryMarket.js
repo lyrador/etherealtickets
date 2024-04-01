@@ -1,8 +1,9 @@
 const { expect } = require("chai");
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const BigNumber = require("bignumber.js");
-const oneEth = ethers.parseEther("1.0");
-const twoEth = ethers.parseEther("2.0");
+
+const ONE_ETH = ethers.parseEther("1.0");
+const TWO_ETH = ethers.parseEther("2.0");
 
 describe("SecondaryMarketplace", function () {
     // Stage enum numeric values => 0: INITIALIZATION, 1: PRIMARY_SALE, 2: SECONDARY_SALE, 3: OPEN, 4: COMPLETED
@@ -43,7 +44,7 @@ describe("SecondaryMarketplace", function () {
 
     // Create concertContract called Eras at Stadium, with 1 category, 1 seat and it cost 2 ether. Concert on 12 dec 2024, sales on 10 oct 2024.
     async function createTestConcertFixture(concertContract) {
-        await concertContract.createConcert("Eras", "Stadium", [oneEth], [1], 12122024,10102024);
+        await concertContract.createConcert("Eras", "Stadium", [ONE_ETH], [1], 12122024,10102024);
     }
 
     // Setup prerequisites for SecondaryMarket -> Create concert, create primaryMarket and have a ticket bought during primary sale.
@@ -54,7 +55,7 @@ describe("SecondaryMarketplace", function () {
         // Verify that concertContract is created correctly at initialization stage
         expect(await concertContract.getConcertID(1)).to.equal(1);
         expect(await concertContract.getConcertStage(1)).to.equal(stages.INITIALIZATION);
-        expect((await concertContract.getSeatCost(1, 1))).to.equal(oneEth);
+        expect((await concertContract.getSeatCost(1, 1))).to.equal(ONE_ETH);
 
         // Verify that cannot join queue if stage not PRIMARY_SALE
         await expect(primaryMarketContract.connect(addr1).joinQueue(1)).to.be.revertedWith("Primary marketplace is closed");
@@ -66,7 +67,7 @@ describe("SecondaryMarketplace", function () {
         expect(await concertContract.getConcertStage(1)).to.equal(stages.PRIMARY_SALE);
 
         // Use this constant ticket cost to set price of ticket for testing, set commission fee for buying ticket
-        const standardisedTicketCost = oneEth;
+        const standardisedTicketCost = ONE_ETH;
         const commissionFeePrimaryMarket = 0;
 
         // Buy ticket from primary marketplace
@@ -347,11 +348,11 @@ describe("SecondaryMarketplace", function () {
             const initialSellerBal = await ethers.provider.getBalance(addr1);
             const initialBuyerBal = await ethers.provider.getBalance(addr2);
     
-            const ticketCost = oneEth;
+            const ticketCost = ONE_ETH;
     
             // Case where buy transaction is successful
             let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
-            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: twoEth});
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: TWO_ETH});
     
             const approvalTxReceipt = await approvalTx.wait();
             const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
@@ -394,7 +395,7 @@ describe("SecondaryMarketplace", function () {
     
             // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
             let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
-            let buy = secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: oneEth});
+            let buy = secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: ONE_ETH});
     
             await expect(buy).to.be.revertedWith(
                 "Insufficient amount to buy"

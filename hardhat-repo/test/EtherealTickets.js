@@ -3,7 +3,9 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 
-const ONE_ETH = 10n ** 18n;
+const ONE_ETH = ethers.parseEther("1.0");
+const TWO_ETH = ethers.parseEther("2.0");
+const THREE_ETH = ethers.parseEther("3.0");
 
 describe("EtherealTickets", function () {
   async function deployFixture() {
@@ -31,7 +33,7 @@ describe("EtherealTickets", function () {
     await concertContract.createConcert(
       "Taylor Swift Day 1",
       "National Stadium",
-      [3, 2, 1],
+      [THREE_ETH, TWO_ETH, ONE_ETH],
       [10, 20, 30],
       1,
       1
@@ -42,7 +44,7 @@ describe("EtherealTickets", function () {
     await concertContract.createConcert(
       "Taylor Swift Day 2",
       "National Stadium",
-      [3, 2, 1],
+      [THREE_ETH, TWO_ETH, ONE_ETH],
       [10, 20, 30],
       2,
       2
@@ -54,7 +56,7 @@ describe("EtherealTickets", function () {
     await concertContract.createConcert(
       "Taylor Swift Day 2",
       "National Stadium",
-      [3, 2, 1],
+      [THREE_ETH, TWO_ETH, ONE_ETH],
       [10, 20, 30],
       2,
       2
@@ -70,7 +72,7 @@ describe("EtherealTickets", function () {
     await concertContract.createConcert(
       "Taylor Swift Day 1",
       "National Stadium",
-      [3, 2, 1],
+      [THREE_ETH, TWO_ETH, ONE_ETH],
       [100, 200, 300],
       1,
       1
@@ -333,10 +335,10 @@ describe("EtherealTickets", function () {
       await joinQueueFixture(concertContract);
 
       const costForSeat1 = await concertContract.getSeatCost(1, 1);
-      expect(costForSeat1).to.equal(3); //
+      expect(costForSeat1).to.equal(THREE_ETH); //
 
       const costForSeat101 = await concertContract.getSeatCost(1, 11); // 101st seat, should be in the second category
-      expect(costForSeat101).to.equal(2);
+      expect(costForSeat101).to.equal(TWO_ETH);
     });
 
     //test for getConcertID
