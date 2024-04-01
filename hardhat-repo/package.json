@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.2",
-    "bignumber.js": "^9.1.2"
+    "bignumber.js": "^9.1.2",
+    "fs-extra": "^11.2.0"
   }
 }

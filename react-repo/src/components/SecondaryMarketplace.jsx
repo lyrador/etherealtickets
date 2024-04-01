@@ -4,10 +4,11 @@ import Header from "./Header";
 
 function SecondaryMarketplace() {
   return (
-    <Header>
+    <>
+      <Header />
       <NavBar />
-      <div>Secondary Marketplace</div>
-    </Header>
+      <h2>Secondary Marketplace</h2>
+    </>
   );
 }
 

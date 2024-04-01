@@ -4,59 +4,42 @@ import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
 import Header from "./Header";
 
+import { ethers } from "ethers";
+import Concert from "../contracts/Concert.json";
+import { CONCERT } from "../constants/Address";
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const contract = new ethers.Contract(CONCERT, Concert.abi, signer);
+
 function AllConcerts() {
-  const navigate = useNavigate();
-  const [account, setAccount] = useState(null);
+  const [concert, setConcert] = useState("");
 
-  useEffect(() => {
-    const address = localStorage.getItem("currAccount");
-    setAccount(address);
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem("currAccount");
-    navigate("/");
+  const getConcert = async () => {
+    const name = await contract.getName(1);
+    setConcert(name);
   };
 
-  return (
-    <Header>
-      <NavBar />
-      <div className="app-details">
-        <h2> You are connected to metamask.</h2>
-        <div className="app-balance">
-          <span>Account: </span>
-          {account}
-        </div>
-      </div>
-      <div>
-        <button className="app-buttons__logout" onClick={logout}>
-          Disconnect
-        </button>
-      </div>
-    </Header>
+  // const onlyOwnerMethod = async () => {
+  //   try {
+  //     await contract.deleteConcert(1);
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
 
-    // <div className="app">
-    //   <div className="app-header">
-    //     <h1>React dApp authentication with React, We3.js and Metamask</h1>
-    //     <NavBar />
-    //   </div>
-    //   {account && (
-    //     <div className="app-wrapper">
-    //       <div className="app-details">
-    //         <h2> You are connected to metamask.</h2>
-    //         <div className="app-balance">
-    //           <span>Account: </span>
-    //           {account}
-    //         </div>
-    //       </div>
-    //       <div>
-    //         <button className="app-buttons__logout" onClick={logout}>
-    //           Disconnect
-    //         </button>
-    //       </div>
-    //     </div>
-    //   )}
-    // </div>
+  useEffect(() => {
+    getConcert();
+
+    //onlyOwnerMethod();
+  }, []);
+
+  return (
+    <>
+      <Header />
+      <NavBar />
+      <h2>Concert: {concert}</h2>
+    </>
   );
 }
 
