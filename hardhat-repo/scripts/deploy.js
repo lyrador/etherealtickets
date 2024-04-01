@@ -20,27 +20,28 @@ async function main() {
   //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
   // );
 
-  [owner, addr1] = await ethers.getSigners();
-
-  const ticketAccountValidator = await hre.ethers.deployContract("TicketAccountValidator", [owner]);
-  await ticketAccountValidator.waitForDeployment();
-  const etherConsumer = await hre.ethers.deployContract("EtherConsumer");
-  await etherConsumer.waitForDeployment();
-
-  const concert = await hre.ethers.deployContract("Concert", [owner]);
+  const concert = await hre.ethers.deployContract("Concert");
   await concert.waitForDeployment();
-  const ticket = await hre.ethers.deployContract("Ticket", concert.target);
+  const ticket = await hre.ethers.deployContract("Ticket", [concert.target]);
   await ticket.waitForDeployment();
-  const marketplace = await hre.ethers.deployContract("Marketplace", concert.target, ticket.target);
+  const marketplace = await hre.ethers.deployContract("Marketplace", [
+    concert.target,
+    ticket.target,
+    "EtherealTickets",
+    "ET",
+  ]);
   await marketplace.waitForDeployment();
-  const secondaryMarketPlace = await hre.ethers.deployContract("SecondaryMarketPlace", concert.target, ticket.target);
+  const secondaryMarketPlace = await hre.ethers.deployContract(
+    "SecondaryMarketplace",
+    [concert.target, ticket.target, marketplace.target]
+  );
   await secondaryMarketPlace.waitForDeployment();
 
+  console.log(`Concert contract deployed to ${concert.target}`);
+  console.log(`Ticket contract deployed to ${ticket.target}`);
+  console.log(`Marketplace contract deployed to ${marketplace.target}`);
   console.log(
-    `TicketAccountValidator deployed to ${ticketAccountValidator.target}`
-  );
-  console.log(
-    `EtherConsumer deployed to ${etherConsumer.target}`
+    `SecondaryMarketplace contract deployed to ${secondaryMarketPlace.target}`
   );
 }
 
