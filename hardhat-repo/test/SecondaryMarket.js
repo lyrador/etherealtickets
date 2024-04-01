@@ -37,11 +37,6 @@ describe("SecondaryMarketplace", function () {
             primaryMarketContract.target
         ]);
 
-        //console.log("Concert deployed to: ", concertContract.target);
-        //console.log("Ticket deployed to: ", ticketContract.target);
-        //console.log("PrimaryMarket deployed to: ", primaryMarketContract.target);
-        //console.log("SecondaryMarket deployed to: ", secondaryMarketContract.target);
-
         // Return contracts and accounts to be used for tests
         return { concertContract, ticketContract, primaryMarketContract, secondaryMarketContract, owner, addr1, addr2 };
     }
@@ -49,11 +44,6 @@ describe("SecondaryMarketplace", function () {
     // Create concertContract called Eras at Stadium, with 1 category, 1 seat and it cost 2 ether. Concert on 12 dec 2024, sales on 10 oct 2024.
     async function createTestConcertFixture(concertContract) {
         await concertContract.createConcert("Eras", "Stadium", [oneEth], [1], 12122024,10102024);
-    }
-
-    // Update concertContract stage status
-    async function updateTestConcertStageFixture(concertContract, concertId, stage) {
-        await concertContract.updateConcert(concertId, "Eras", "Stadium", [oneEth], [1], 12122024, 10102024, stage);
     }
 
     // Setup prerequisites for SecondaryMarket -> Create concert, create primaryMarket and have a ticket bought during primary sale.
@@ -70,7 +60,7 @@ describe("SecondaryMarketplace", function () {
         await expect(primaryMarketContract.connect(addr1).joinQueue(1)).to.be.revertedWith("Primary marketplace is closed");
 
         // Update concert stage to PRIMARY_SALE
-        await updateTestConcertStageFixture(concertContract, 1, stages.PRIMARY_SALE);
+        await concertContract.updateConcertStage(1);
 
         // Verify that stage is updated to PRIMARY_SALE
         expect(await concertContract.getConcertStage(1)).to.equal(stages.PRIMARY_SALE);
@@ -105,16 +95,15 @@ describe("SecondaryMarketplace", function () {
 
     describe("Secondary Market Creation", function () {
         it("Should create secondary market", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract, 
                 secondaryMarketContract, 
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
-    
+            await concertContract.updateConcertStage(1);;
+
             // Verify that stage is updated to SECONDARY_SALE
             expect(
                 await concertContract.getConcertStage(1)
@@ -125,7 +114,7 @@ describe("SecondaryMarketplace", function () {
         });
         
         it("Should fail to create secondary market if secondary marketplace not open", async function () {
-            // Setup
+            // Deploy
             const { 
                 secondaryMarketContract, 
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
@@ -137,7 +126,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to create secondary market if not called by owner", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -145,8 +134,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);
 
             // Verify that cannot create secondary marketplace if function is called by someone another than owner
             await expect(
@@ -155,7 +143,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to create secondary market if invalid concertId", async function () {
-            // Setup
+            // Deploy
             const { 
                 secondaryMarketContract, 
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
@@ -169,7 +157,7 @@ describe("SecondaryMarketplace", function () {
 
     describe("List Ticket", function () {
         it("Should list ticket", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -177,12 +165,11 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
-    
+            await concertContract.updateConcertStage(1);
+
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
-    
+
             // List ticket from address 1, who has previously bought ticket
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
             let listedTickets = await secondaryMarketContract.getListedTicketsFromConcert(1);
@@ -194,7 +181,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to list ticket if secondary marketplace not open", async function () {
-            // Setup
+            // Deploy
             const { 
                 secondaryMarketContract, 
                 addr1
@@ -207,7 +194,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to list ticket if ticketId not valid", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -215,9 +202,8 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
-    
+            await concertContract.updateConcertStage(1);
+
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
     
@@ -228,7 +214,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to list ticket if not called by owner", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -236,9 +222,8 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
-    
+            await concertContract.updateConcertStage(1);
+
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
             
@@ -251,7 +236,7 @@ describe("SecondaryMarketplace", function () {
 
     describe("Unlist Ticket", function () {
         it("Should unlist ticket", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -259,12 +244,11 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
-    
+            await concertContract.updateConcertStage(1);
+
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
-    
+
             // List ticket from address 1, who has previously bought ticket
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
     
@@ -277,7 +261,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to unlist ticket if secondary marketplace not open", async function () {
-            // Setup
+            // Deploy
             const { 
                 secondaryMarketContract, 
                 addr1
@@ -290,7 +274,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to unlist ticket if ticketId not valid", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -298,8 +282,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
@@ -314,7 +297,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to unlist ticket if not called by owner", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 secondaryMarketContract,
@@ -323,8 +306,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
@@ -341,7 +323,7 @@ describe("SecondaryMarketplace", function () {
 
     describe("Buy Ticket", function () {
         it("Should buy ticket", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 ticketContract,
@@ -352,8 +334,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
@@ -393,7 +374,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to buy ticket if insufficient amount sent", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 primaryMarketContract,
@@ -403,8 +384,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
@@ -422,7 +402,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to buy ticket if secondary marketplace not open", async function () {
-            // Setup
+            // Deploy
             const { 
                 primaryMarketContract,
                 secondaryMarketContract, 
@@ -438,7 +418,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to buy ticket if ticketId not valid", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 primaryMarketContract,
@@ -448,8 +428,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
@@ -465,7 +444,7 @@ describe("SecondaryMarketplace", function () {
         });
 
         it("Should fail to buy ticket if owner is buying own listed ticket", async function () {
-            // Setup
+            // Deploy
             const { 
                 concertContract,
                 primaryMarketContract,
@@ -474,8 +453,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Update concert stage to SECONDARY_SALE
-            const updateTestConcertStageFixtureLoader = async () => updateTestConcertStageFixture(concertContract, 1, stages.SECONDARY_SALE);
-            await loadFixture(updateTestConcertStageFixtureLoader);
+            await concertContract.updateConcertStage(1);;
     
             // Create secondary marketplace for given concertId
             await secondaryMarketContract.createSecondaryMarketplace(1);
