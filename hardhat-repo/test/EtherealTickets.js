@@ -278,7 +278,19 @@ describe("EtherealTickets", function () {
         3,
         4
       );
-      //for this, i need to have getters for every part of the concert so that i can do the .to.equal
+    const updatedName = await concertContract.getName(1);
+    const updatedLocation = await concertContract.getLocation(1);
+    const updatedTicketCostArray = await concertContract.getTicketCostArray(1);
+    const updatedCategorySeatArray = await concertContract.getCategorySeatArray(1);
+    const updatedConcertDate = await concertContract.getConcertDate(1);
+    const updatedSalesDate = await concertContract.getSalesDate(1);
+
+    expect(updatedName).to.equal("Updated Taylor Swift Day 1");
+    expect(updatedLocation).to.equal("Updated National Stadium");
+    expect(updatedTicketCostArray.map(price => price.toString())).to.deep.equal(['150', '250', '350', '450']);
+    expect(updatedCategorySeatArray.map(tickets => tickets.toString())).to.deep.equal(['150', '250', '350', '450']);
+    expect(updatedConcertDate).to.equal(3);
+    expect(updatedSalesDate).to.equal(4);
     });
 
     // Test for deleting a concert and checking whether it exists or not
