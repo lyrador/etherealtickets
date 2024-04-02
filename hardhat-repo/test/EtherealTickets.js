@@ -266,6 +266,41 @@ describe("EtherealTickets", function () {
   });
 
   describe("Concert", function () {
+
+    //Test for creating a concert and making sure it exists
+    it("Should successfully create a concert and verify its existence", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+
+      const name = "Taylor Swift Day 1";
+      const location = "National Stadium";
+      const ticketCost = [100, 200, 300]; 
+      const categorySeatNumber = [50, 100, 150]; 
+      const concertDate = 20250101; 
+      const salesDate = 20240101; 
+  
+      // Create concert
+      await concertContract.createConcert(
+        name,
+        location,
+        ticketCost,
+        categorySeatNumber,
+        concertDate,
+        salesDate
+      );
+  
+      const concertId = 1;
+  
+      const exists = await concertContract.isValidConcert(concertId);
+      expect(exists).to.equal(true);
+  
+      expect(name).to.equal("Taylor Swift Day 1");
+      expect(location).to.equal("National Stadium");
+      expect(ticketCost.map(price => price.toString())).to.deep.equal(['100', '200', '300']);
+      expect(categorySeatNumber.map(tickets => tickets.toString())).to.deep.equal(['50', '100', '150']);
+      expect(concertDate).to.equal(20250101);
+      expect(salesDate).to.equal(20240101);
+    });
+
     // Test for updating a concert
     it("Should allow the owner to update a concert", async function () {
       const { concertContract } = await loadFixture(deployFixture);
@@ -298,14 +333,76 @@ describe("EtherealTickets", function () {
     // Test for deleting a concert and checking whether it exists or not
     it("Should confirm that a concert no longer exists after deletion", async function () {
       const { concertContract } = await loadFixture(deployFixture);
-
-      await joinQueueFixture(concertContract);
-
-      await concertContract.deleteConcert(1);
-
-      const exists = await concertContract.isValidConcert(1);
-
+    
+      await concertContract.createConcert(
+        "Deletable Concert",
+        "Test Venue",
+        [100, 200, 300], // ticketCost array
+        [50, 50, 50], // categorySeatNumber array
+        20250101,
+        20240101
+      );
+    
+      const concertId = 1;
+    
+      const initialStage = await concertContract.getConcertStage(concertId);
+      expect(initialStage).to.equal(0); 
+      await concertContract.deleteConcert(concertId);
+    
+      const exists = await concertContract.isValidConcert(concertId);
       expect(exists).to.equal(false);
+    });
+
+    //test for incorrect lengths of array
+    it("Should revert if ticketCost and categorySeatNumber arrays are not of the same length", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+      const name = "Mismatched Length Concert";
+      const location = "Test Venue";
+      const ticketCost = [100, 200]; 
+      const categorySeatNumber = [50, 50, 50]; 
+      const concertDate = 20250101;
+      const salesDate = 20240101;
+  
+      await expect(concertContract.createConcert(
+        name,
+        location,
+        ticketCost,
+        categorySeatNumber,
+        concertDate,
+        salesDate
+      )).to.be.revertedWith("ticketCost and categorySeatNumber arrays must have the same length");
+     });
+
+     //test for empty arrays of ticketcost and category seatnumber
+     it("Should revert if the ticketCost array is empty", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+  
+      await expect(
+        concertContract.createConcert(
+          "Empty ticketCost Array Concert",
+          "Test Venue",
+          [], // Empty ticketCost array
+          [50, 50, 50], 
+          20250101,
+          20240101
+        )
+      ).to.be.revertedWith("ticketCost array cannot be empty");
+    });
+
+    //check if the categoryseatnumber array is empty
+    it("Should revert if the categorySeatNumber array is empty", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+  
+      await expect(
+        concertContract.createConcert(
+          "Empty categorySeatNumber Array Concert",
+          "Test Venue",
+          [100, 200, 300],
+          [], // Empty categorySeatNumber array
+          20250101,
+          20240101
+        )
+      ).to.be.revertedWith("categorySeatNumber array cannot be empty");
     });
 
     //test for deleting a non existent concert
@@ -389,6 +486,31 @@ describe("EtherealTickets", function () {
       // Assuming concert with ID 1 is created in the fixture
       const isValid = await concertContract.isValidConcert(1);
       expect(isValid).to.be.true;
+    });
+
+    it("Should not allow deletion of a concert at PRIMARY_SALE stage", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+      await concertContract.createConcert(
+      "Concert at Initialization",
+      "Venue",
+      [100, 200, 300],
+      [50, 50, 50],
+      20250101,
+      20240101
+    );
+
+    const concertId = 1; // Assuming concert IDs start at 1 and increment
+
+    // Update the concert's stage to PRIMARY_SALE by calling updateConcertStage once
+    await concertContract.updateConcertStage(concertId);
+
+    // Verify concert is now at PRIMARY_SALE stage
+    const currentStage = await concertContract.getConcertStage(concertId);
+    expect(currentStage).to.equal(1); // Assuming '1' corresponds to PRIMARY_SALE in your Stage enum
+
+    // Attempt to delete the concert, expecting the transaction to revert
+    await expect(concertContract.deleteConcert(concertId))
+      .to.be.revertedWith("Concert can only be deleted at INITIALIZATION stage");
     });
   });
 });

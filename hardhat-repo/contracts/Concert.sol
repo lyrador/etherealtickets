@@ -51,6 +51,9 @@ contract Concert {
         uint256 _concertDate,
         uint256 _salesDate
     ) public onlyOwner {
+        require(_ticketCost.length != 0,"ticketCost array cannot be empty");
+        require(_categorySeatNumber.length != 0,"categorySeatNumber array cannot be empty");
+        require(_ticketCost.length == _categorySeatNumber.length, "ticketCost and categorySeatNumber arrays must have the same length");
         totalConcerts += 1; // Incremenets the totalconcertId;
         concerts[totalConcerts] = Concert(
             totalConcerts,
@@ -98,6 +101,7 @@ contract Concert {
     //deleting the concert
     function deleteConcert(uint256 concertId) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
+        require(concerts[concertId].stage == Stage.INITIALIZATION, "Concert can only be deleted at INITIALIZATION stage");
         delete concerts[concertId];
     }
 
