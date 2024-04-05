@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ORGANIZER } from "../constants/Address";
+import Button from "react-bootstrap/Button";
 
 function Header() {
   const [account, setAccount] = useState(null);
@@ -36,15 +37,19 @@ function Header() {
   return (
     <div className="app-header">
       <h1>EtherealTickets</h1>
-      <h2>
+      <h3>
         {account
           ? `You are logged in as ${account} (${role})`
           : "You are not logged in"}
-      </h2>
+      </h3>
       {account ? (
-        <button onClick={logout}>Logout</button>
+        <Button variant="secondary" onClick={logout}>
+          Logout
+        </Button>
       ) : (
-        <button onClick={login}>Login</button>
+        <Button variant="secondary" onClick={login}>
+          Login
+        </Button>
       )}
     </div>
   );
