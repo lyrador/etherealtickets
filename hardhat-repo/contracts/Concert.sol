@@ -200,7 +200,7 @@ contract Concert {
 
     //checking if the concert is valid or not
     function isValidConcert(uint256 concertId) public view returns (bool) {
-    return concerts[concertId].id != 0;
+        return concerts[concertId].id != 0;
     }
 
     function isValidSeat(uint256 concertId, uint24 seatNumber) public view returns (bool) {
@@ -215,5 +215,29 @@ contract Concert {
     //check concert stage
     function getConcertStage(uint256 concertId) public view returns (Stage) {
         return concerts[concertId].stage;
+    }
+
+    // get list of concerts by stage
+    function getConcertsByStage(uint stageInt) public view returns (Concert[] memory) {
+        
+        Stage stage = Stage(stageInt);
+        
+        uint count = 0;
+        for (uint i = 1; i <= totalConcerts; i++) {
+            if (concerts[i].stage == stage) {
+                count++;
+            }
+        }
+
+        Concert[] memory requiredConcerts = new Concert[](count);
+        uint index = 0;
+        for (uint i = 1; i <= totalConcerts; i++) {
+            if (concerts[i].stage == stage) {
+                requiredConcerts[index] = concerts[i];
+                index++;
+            }
+        }
+
+        return requiredConcerts;
     }
 }

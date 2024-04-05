@@ -97,6 +97,8 @@ async function main() {
   const TWO_ETH = ethers.parseEther("2.0");
   const THREE_ETH = ethers.parseEther("3.0");
 
+  // preload concert data
+  // Concert 1: Stage = PRIMARY_SALE
   await concert.createConcert(
     "Taylor Swift Day 1",
     "National Stadium",
@@ -105,6 +107,40 @@ async function main() {
     1,
     1
   );
+  await concert.updateConcertStage(1);
+
+  // Concert 2: Stage = SECONDARY_SALE
+  await concert.createConcert(
+    "Taylor Swift Day 2",
+    "National Stadium",
+    [THREE_ETH, TWO_ETH, ONE_ETH],
+    [10, 20, 30],
+    2,
+    2
+  );
+  await concert.updateConcertStage(2);
+  await concert.updateConcertStage(2);
+
+  // Concert 3: Stage = INITIALIZATION
+  await concert.createConcert(
+    "Taylor Swift Day 3",
+    "National Stadium",
+    [THREE_ETH, TWO_ETH, ONE_ETH],
+    [10, 20, 30],
+    3,
+    3
+  );
+
+  // Concert 4: Stage = PRIMARY_SALE
+  await concert.createConcert(
+    "Taylor Swift Day 4",
+    "National Stadium",
+    [THREE_ETH, TWO_ETH, ONE_ETH],
+    [10, 20, 30],
+    4,
+    4
+  );
+  await concert.updateConcertStage(4);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
