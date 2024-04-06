@@ -11,7 +11,7 @@ const NavBar = () => {
     <div className="center">
       <Nav variant="pills" activeKey={location.pathname}>
         <Nav.Item>
-          <Nav.Link href="/home">Home</Nav.Link>
+          <Nav.Link href="/">Home</Nav.Link>
         </Nav.Item>
         <Nav.Item>
           <Nav.Link href="/marketplace">Marketplace</Nav.Link>

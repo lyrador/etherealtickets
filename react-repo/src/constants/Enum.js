@@ -1,0 +1,7 @@
+export const STAGE = [
+  "INITIALIZATION",
+  "PRIMARY_SALE",
+  "SECONDARY_SALE",
+  "OPEN",
+  "COMPLETED",
+];

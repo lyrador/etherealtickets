@@ -27,6 +27,15 @@ code {
   align-items: center;
 }
 
+.column {
+  flex: 1;
+  border: 1px solid #ccc;
+}
+
+.column:first-child {
+  flex: 2;
+}
+
 /* .app-header button {
   display: block;
   border-radius: 40px;
