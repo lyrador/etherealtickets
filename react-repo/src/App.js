@@ -4,6 +4,7 @@ import AllConcerts from "./components/AllConcerts";
 import MarketplacePage from "./components/MarketplacePage";
 import SecondaryMarketplace from "./components/SecondaryMarketplace";
 import Seats from "./components/Seats";
+import Checkout from "./components/Checkout";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           path="/secondary-marketplace"
           element={<SecondaryMarketplace />}
         />
+        <Route path="/checkout" element={<Checkout />}/>
       </Routes>
     </div>
   );
