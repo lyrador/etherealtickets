@@ -110,27 +110,51 @@ describe("Marketplace", function () {
 
   describe("Join Queue", function () {
     it("Join queue for concert at primary sales stage", async function () {
-      const { concertContract, marketplaceContract, addr1 } = await loadFixture(
-        deployFixture
-      );
+      const { concertContract, marketplaceContract, addr1, addr2 } =
+        await loadFixture(deployFixture);
       const joinQueueFixtureArrow = async () =>
         joinQueueFixture(concertContract);
       await loadFixture(joinQueueFixtureArrow);
       await marketplaceContract.connect(addr1).joinQueue(1);
-      const queued = await marketplaceContract.connect(addr1).getHasQueued(1);
-      expect(queued).to.equal(true);
+      await marketplaceContract.connect(addr2).joinQueue(1);
+
+      const queued1 = await marketplaceContract.connect(addr1).getHasQueued(1);
+      expect(queued1).to.equal(true);
+      const position1 = await marketplaceContract
+        .connect(addr1)
+        .getQueuePosition(1);
+      expect(position1).to.equal(1);
+
+      const queued2 = await marketplaceContract.connect(addr2).getHasQueued(1);
+      expect(queued2).to.equal(true);
+      const position2 = await marketplaceContract
+        .connect(addr2)
+        .getQueuePosition(1);
+      expect(position2).to.equal(2);
     });
 
     it("Join queue for concert at secondary sales stage", async function () {
-      const { concertContract, marketplaceContract, addr1 } = await loadFixture(
-        deployFixture
-      );
+      const { concertContract, marketplaceContract, addr1, addr2 } =
+        await loadFixture(deployFixture);
       const joinQueueFixtureArrow = async () =>
         joinQueueFixture(concertContract);
       await loadFixture(joinQueueFixtureArrow);
       await marketplaceContract.connect(addr1).joinQueue(2);
-      const queued = await marketplaceContract.connect(addr1).getHasQueued(2);
-      expect(queued).to.equal(true);
+      await marketplaceContract.connect(addr2).joinQueue(2);
+
+      const queued1 = await marketplaceContract.connect(addr1).getHasQueued(2);
+      expect(queued1).to.equal(true);
+      const position1 = await marketplaceContract
+        .connect(addr1)
+        .getQueuePosition(2);
+      expect(position1).to.equal(1);
+
+      const queued2 = await marketplaceContract.connect(addr2).getHasQueued(2);
+      expect(queued2).to.equal(true);
+      const position2 = await marketplaceContract
+        .connect(addr2)
+        .getQueuePosition(2);
+      expect(position2).to.equal(2);
     });
 
     it("Cannot join queue for concert not at primary or secondary sales stage", async function () {
