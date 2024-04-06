@@ -19,6 +19,7 @@
     "typescript": "^5.4.3"
   },
   "dependencies": {
+    "@nomicfoundation/edr-darwin-arm64": "^0.3.3",
     "@openzeppelin/contracts": "^5.0.2",
     "bignumber.js": "^9.1.2",
     "fs-extra": "^11.2.0"
