@@ -6,7 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 
-export default function TicketPurchaseCard({cardImg, concertName, concertLoc, category, ticketCost}) {
+export default function TicketPurchaseCard({cardImg, concertName, concertLoc, category, ticketCost, concertDate}) {
     const theme = useTheme();
 
     return (
@@ -19,10 +19,19 @@ export default function TicketPurchaseCard({cardImg, concertName, concertLoc, ca
                 />
                 <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
                     <Typography component="div" variant="h5">
-                        Live From Space
+                        {concertName}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary" component="div">
-                        Mac Miller
+                        {concertLoc}
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary" component="div">
+                        Category: {category}
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary" component="div">
+                        Ticket Cost: {ticketCost} ETH
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary" component="div">
+                        Concert Date: {concertDate}
                     </Typography>
                 </CardContent>
                 {/* <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pl: 1, pb: 1 }}>

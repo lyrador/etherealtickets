@@ -16,14 +16,13 @@ import bruno from '../images/bruno.jpg';
 
 import { ethers } from 'ethers';
 
-const content = "Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.";
+const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
 function Checkout() {
     const navigate = useNavigate();
     const [open, setOpen] = React.useState(false);
     const { state } = useLocation();
-    const { id } = state; // Read values passed on state
-
+    const { rowId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
 
     const [balance, setBalance] = useState('0');
 
@@ -117,13 +116,29 @@ function Checkout() {
     return (
         <>
             <Header />
-            <h2>Checkout with ticketId : {id}</h2>
+            <h2>Checkout with rowId : {rowId}</h2>
             <h3>{balance}</h3>
-            <TicketPurchaseCard cardImg={swift} />
+            <TicketPurchaseCard 
+                cardImg={swift} 
+                concertName={concertName}
+                concertLoc={concertLoc}
+                category={category}
+                ticketCost={ticketCost}
+                concertDate={concertDate}
+            />
             <div>
                 <FinancialTable data={financials} />
             </div>
             <Button variant="contained" color="error" onClick={() => navigate(-1)}>Cancel checkout and return</Button>
+            <>
+                <Button
+                    variant="contained"
+                    onClick={() => setOpen(true)}
+                >
+                    Proceed
+                </Button>
+                <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
+            </>
         </>
     );
 }

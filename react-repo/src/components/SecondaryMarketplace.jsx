@@ -16,16 +16,6 @@ const content = "Let Google help apps determine location. This means sending ano
 function SecondaryMarketplace() {
   const navigate = useNavigate();
 
-  const [open, setOpen] = React.useState(false);
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
   const columns = [
     { field: 'id', headerName: 'ID', flex: 1 },
     { field: 'concertName', headerName: 'Concert Name', flex: 1 },
@@ -48,14 +38,21 @@ function SecondaryMarketplace() {
               variant="contained"
               onClick={() => {
                 console.log(cellValue.row.buyButton);
-                //handleClickOpen();
-                navigate('/checkout', { state: { id: cellValue.row.buyButton } });
+                navigate('/checkout', { 
+                  state: { 
+                    rowId: cellValue.row.id,
+                    concertName: cellValue.row.concertName,
+                    concertLoc: cellValue.row.concertLoc,
+                    category: cellValue.row.category,
+                    ticketCost: cellValue.row.ticketCost,
+                    concertDate: cellValue.row.concertDate
+                  } 
+                });
               }
               }
             >
               Buy
             </Button>
-            <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
           </>
         );
       }
