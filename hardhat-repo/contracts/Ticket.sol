@@ -24,7 +24,17 @@ contract Ticket {
         address owner,
         uint24 category, 
         uint256 cost, 
-        string passportId); // consider using hashes of passportIds instead for privacy
+        string passportId
+    ); // consider using hashes of passportIds instead for privacy
+    
+    // event to track ownership changes of tickets
+    event TicketOwnerUpdated(
+        uint256 indexed ticketId, 
+        address indexed oldOwner,
+        address indexed newOwner, 
+        uint256 concertId, 
+        uint256 timestamp
+    );
 
     constructor(address _concertAddress) {
         concertContract = Concert(_concertAddress);
@@ -54,6 +64,11 @@ contract Ticket {
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
     }
 
+    modifier onlyTicketOwner(uint256 ticketId) {
+        require(msg.sender == ticketOwners[ticketId], "Caller is not the ticket owner"); 
+        _; 
+    }
+
     function getOwner(uint256 ticketId) public view returns (address) {
         require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
         return ticketOwners[ticketId];
@@ -75,9 +90,16 @@ contract Ticket {
         return tickets[ticketId].prevTicketOwner;
     }
 
-    // IMPORTANT: nd to add a check to make sure got access right to update
-    function updateTicketOwner(uint256 ticketId, address newOwner) public {
+    // added a check to make sure got access right to update
+    function updateTicketOwner(uint256 ticketId, address newOwner) public onlyTicketOwner(ticketId) {
+        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
+        address oldOwner = ticketOwners[ticketId];
+        require(oldOwner != address(0), "Invalid previous owner");
+        require(newOwner != address(0), "Invalid new owner"); 
+
+        // update owner in the mapping
         ticketOwners[ticketId] = newOwner;
+        emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
     }
 
     function getTicketOwner(uint256 ticketId) public view returns (address) {
