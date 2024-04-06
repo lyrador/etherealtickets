@@ -66,6 +66,7 @@ contract Ticket {
 
     modifier onlyTicketOwner(uint256 ticketId) {
         require(msg.sender == ticketOwners[ticketId], "Caller is not the ticket owner"); 
+        _; 
     }
 
     function getOwner(uint256 ticketId) public view returns (address) {
