@@ -5,7 +5,7 @@ import Header from "./Header";
 import { ethers } from "ethers";
 import Concert from "../contracts/Concert.json";
 import Marketplace from "../contracts/Marketplace.json";
-import { CONCERT, MARKETPLACE } from "../constants/Address";
+import { CONCERT, MARKETPLACE, ORGANIZER } from "../constants/Address";
 import { STAGE } from "../constants/Enum";
 
 import Table from "react-bootstrap/Table";
@@ -23,12 +23,15 @@ const marketplaceContract = new ethers.Contract(
 
 function MarketplacePage() {
   const [tableRows, setTableRows] = useState([]);
+  const [isOwner, setIsOwner] = useState(false);
   const navigate = useNavigate();
 
   const fetchMarketplaceData = async () => {
-    const result = await concertContract.getConcertsByStage(1);
+    const primarySaleConcerts = await concertContract.getConcertsByStage(1);
+    const secondarySaleConcerts = await concertContract.getConcertsByStage(2);
+    const concerts = [...primarySaleConcerts, ...secondarySaleConcerts];
 
-    const transformedResult = result.map((concert) => {
+    const transformedResult = concerts.map((concert) => {
       const res = [];
       res.push(parseInt(concert.id)); // ID
       res.push(concert.name); // Name
@@ -42,8 +45,23 @@ function MarketplacePage() {
     setTableRows(transformedResult);
   };
 
+  const getAccountOnLoad = async () => {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    setIsOwner(accounts[0] == ORGANIZER);
+  };
+
+  const handleAccountsChanged = (accounts) => {
+    setIsOwner(accounts[0] == ORGANIZER);
+  };
+
   useEffect(() => {
     fetchMarketplaceData();
+    getAccountOnLoad();
+
+    // Subscribe to Metamask account changes
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
   }, []);
 
   const handleJoinQueue = async (id) => {
@@ -53,6 +71,11 @@ function MarketplacePage() {
     } catch (err) {
       alert("You are already in the queue");
     }
+  };
+
+  // for organizer
+  const viewMarketplace = (id) => {
+    navigate(`/marketplace/${id}`);
   };
 
   return (
@@ -77,11 +100,19 @@ function MarketplacePage() {
               {row.map((col) => (
                 <td>{col}</td>
               ))}
-              <td>
-                <Button onClick={() => handleJoinQueue(row[0])}>
-                  Join Queue
-                </Button>
-              </td>
+              {isOwner ? (
+                <td>
+                  <Button onClick={() => viewMarketplace(row[0])}>
+                    View Marketplace
+                  </Button>
+                </td>
+              ) : (
+                <td>
+                  <Button onClick={() => handleJoinQueue(row[0])}>
+                    Join Queue
+                  </Button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
