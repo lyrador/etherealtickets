@@ -21,6 +21,9 @@ const NavBar = () => {
             Secondary Marketplace
           </Nav.Link>
         </Nav.Item>
+        <Nav.Item>
+          <Nav.Link href="/tickets">Tickets</Nav.Link>
+        </Nav.Item>
       </Nav>
     </div>
     // <div style={{ textAlign: "center", marginBottom: 30 }}>

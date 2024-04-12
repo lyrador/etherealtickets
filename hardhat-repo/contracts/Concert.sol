@@ -240,4 +240,9 @@ contract Concert {
 
         return requiredConcerts;
     }
+
+    // get concert details from concertId
+    function getConcertDetailsFromConcertId(uint256 concertId) public view returns (Concert memory) {
+        return concerts[concertId];
+    }
 }

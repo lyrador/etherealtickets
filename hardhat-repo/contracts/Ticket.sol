@@ -1,10 +1,12 @@
 pragma solidity ^0.8.24;
 
 import "./Concert.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract Ticket {
+contract Ticket is ERC721 {
     
     Concert concertContract;
+    uint256 numOfTickets;
     
     struct Ticket {
         uint256 ticketId;
@@ -36,8 +38,8 @@ contract Ticket {
         uint256 timestamp
     );
 
-    constructor(address _concertAddress) {
-        concertContract = Concert(_concertAddress);
+    constructor(address concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
+        concertContract = Concert(concertAddress);
     }
 
     function createTicket(
@@ -50,6 +52,8 @@ contract Ticket {
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
         //require(concertContract.getOwner() == msg.sender, "Only the concert owner can create tickets");
 
+        numOfTickets = ticketId;
+
         tickets[ticketId] = Ticket({
             ticketId: ticketId,
             concertId: concertId, 
@@ -59,6 +63,7 @@ contract Ticket {
             passportId: passportId // assignment unique passportId of current holder
         });
 
+         _safeMint(buyer, ticketId);
         ticketOwners[ticketId] = buyer; // Marking the ticket's creator as its initial owner (buyer)
 
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
@@ -102,10 +107,6 @@ contract Ticket {
         emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
     }
 
-    function getTicketOwner(uint256 ticketId) public view returns (address) {
-        return ticketOwners[ticketId];
-    }
-
     function isValidTicket(uint256 ticketId) public view returns (bool) {
         return ticketOwners[ticketId] != address(0);
     }
@@ -115,11 +116,38 @@ contract Ticket {
         return tickets[ticketId].cost;
     }
 
-    // View function 
-// Solidity contract snippet
-    function getTicketDetails(uint256 ticketId) public view returns (uint256, uint256, uint256, uint24) {
+    // get ticket details by id
+    function getTicketDetailsFromTicketId(uint256 ticketId) public view returns (Ticket memory) {
+        return tickets[ticketId];
+    }
+    
+    // View ticket
+    function getTicketDetails(uint256 ticketId) public view returns (uint256, uint256, uint24, uint256) {
         require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
         Ticket storage ticket = tickets[ticketId];
-        return (ticket.ticketId, ticket.concertId, ticket.cost, ticket.category);
+        return (ticket.ticketId, ticket.concertId, ticket.category, ticket.cost);
+    }
+
+    // FOR USE CASE: View Owned Tickets
+    function getOwnedTickets() public view returns (Ticket[] memory) {
+
+        uint count = 0;
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (getOwner(i) == msg.sender) {
+                count++;
+            }
+        }
+
+        Ticket[] memory ownedTickets = new Ticket[](count);
+        uint index = 0;
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (getOwner(i) == msg.sender) {
+                ownedTickets[index] = tickets[i];
+                index++;
+            }
+        }
+
+        return ownedTickets;
+
     }
 }
