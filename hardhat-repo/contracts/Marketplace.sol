@@ -12,16 +12,16 @@ contract Marketplace is ERC721 {
     uint256 ticketId; // tokenId of NFT
     Concert concertContract;
     Ticket ticketContract;
-    address[] queue;
+    //address[] queue;
 
     mapping(uint256 => mapping(address => bool)) hasQueued;
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
     mapping(uint256 => uint256[]) seatsTaken;
+    mapping(uint256 => address[]) concertQueues;
 
-    event TicketAmt(uint256 amt);
-
-    constructor(Concert concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
+    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = concertAddress;
+        ticketContract = ticketAddress;
         owner = msg.sender;
     }
 
@@ -44,7 +44,8 @@ contract Marketplace is ERC721 {
 
     
     modifier primaryMarketplaceOpen(uint256 concertId) {
-        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE, "Not at primary sale stage");
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE 
+        || concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Primary marketplace is closed");
         _;
     }
 
@@ -52,19 +53,23 @@ contract Marketplace is ERC721 {
     function joinQueue(uint256 concertId) public validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer has not queued
         require(!hasQueued[concertId][msg.sender], "You are already in the queue");
-        queue.push(msg.sender);
+        concertQueues[concertId].push(msg.sender);
         hasQueued[concertId][msg.sender] = true;
     }
 
     function buyTicket(uint256 concertId, uint24[] memory seatNumbers, 
         string[] memory passportIds) public payable validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
-        require(msg.sender == queue[0], "Buyer not at the front of the queue");
+        require(msg.sender == concertQueues[concertId][0], "Buyer not at the front of the queue");
+        // Valid concert id
+        require(concertId > 0, "Invalid concertId");
+        require(concertContract.isValidConcert(concertId), "Invalid concertId (2)"); // use isValidConcert method
 
         uint256 amtToPay = 0;
         
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Valid seat ids
+            require(seatNumbers[i] > 0, "Seat numbers must be greater than 0");
             require(concertContract.isValidSeat(concertId, seatNumbers[i]), "Invalid seat ID");
             // Seat is not taken
             require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat is taken");
@@ -78,10 +83,8 @@ contract Marketplace is ERC721 {
 
         console.log("Amount: %s", amtToPay);
 
-        emit TicketAmt(amtToPay);
-
         // Eth sent is enough
-        require(msg.value >= (amtToPay * 1 ether), "Insufficient eth sent");
+        require(msg.value >= amtToPay, "Insufficient eth sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
@@ -98,11 +101,12 @@ contract Marketplace is ERC721 {
         }
 
         /// Pop buyer from queue
+        address[] memory queue = concertQueues[concertId];
         address[] memory newQueue = new address[](queue.length - 1); // Initialize newQueue with appropriate size
         for (uint i = 1; i < queue.length; i++) {
             newQueue[i - 1] = queue[i]; // Assign queue elements to newQueue
         }
-        queue = newQueue;
+        concertQueues[concertId] = newQueue;
 
     }
 
@@ -122,6 +126,18 @@ contract Marketplace is ERC721 {
 
     function getSeatAddress(uint256 concertId, uint256 seatId) public view returns (address) {
         return seatTaken[concertId][seatId];
+    }
+
+    function getQueuePosition(uint256 concertId) public view returns (uint256) {
+        address[] memory queue = concertQueues[concertId];
+
+        for (uint i = 0; i < queue.length; i++) {
+            if (queue[i] == msg.sender) {
+                return i + 1;
+            }
+        }
+
+        return 0;
     }
 
 }

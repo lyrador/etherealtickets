@@ -24,7 +24,17 @@ contract Ticket {
         address owner,
         uint24 category, 
         uint256 cost, 
-        string passportId); // consider using hashes of passportIds instead for privacy
+        string passportId
+    ); // consider using hashes of passportIds instead for privacy
+    
+    // event to track ownership changes of tickets
+    event TicketOwnerUpdated(
+        uint256 indexed ticketId, 
+        address indexed oldOwner,
+        address indexed newOwner, 
+        uint256 concertId, 
+        uint256 timestamp
+    );
 
     constructor(address _concertAddress) {
         concertContract = Concert(_concertAddress);
@@ -33,7 +43,7 @@ contract Ticket {
     function createTicket(
         uint256 ticketId, 
         uint256 concertId, 
-        address prevTicketOwner,
+        address buyer,
         uint24 category, 
         uint256 cost, 
         string memory passportId) public { 
@@ -49,9 +59,14 @@ contract Ticket {
             passportId: passportId // assignment unique passportId of current holder
         });
 
-        ticketOwners[ticketId] = msg.sender; // Marking the ticket's creator as its initial owner (buyer)
+        ticketOwners[ticketId] = buyer; // Marking the ticket's creator as its initial owner (buyer)
 
-        emit TicketCreated(ticketId, concertId, msg.sender, category, cost, passportId);
+        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
+    }
+
+    modifier onlyTicketOwner(uint256 ticketId) {
+        require(msg.sender == ticketOwners[ticketId], "Caller is not the ticket owner"); 
+        _; 
     }
 
     function getOwner(uint256 ticketId) public view returns (address) {
@@ -73,6 +88,22 @@ contract Ticket {
     function getPreviousTicketOwner(uint256 ticketId, string memory passportId) public view returns (address) {
         require(validateTicket(ticketId, passportId), "Ticket is invalid");
         return tickets[ticketId].prevTicketOwner;
+    }
+
+    // added a check to make sure got access right to update
+    function updateTicketOwner(uint256 ticketId, address newOwner) public onlyTicketOwner(ticketId) {
+        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
+        address oldOwner = ticketOwners[ticketId];
+        require(oldOwner != address(0), "Invalid previous owner");
+        require(newOwner != address(0), "Invalid new owner"); 
+
+        // update owner in the mapping
+        ticketOwners[ticketId] = newOwner;
+        emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
+    }
+
+    function getTicketOwner(uint256 ticketId) public view returns (address) {
+        return ticketOwners[ticketId];
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {
