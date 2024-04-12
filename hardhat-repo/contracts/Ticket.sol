@@ -102,10 +102,6 @@ contract Ticket {
         emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
     }
 
-    function getTicketOwner(uint256 ticketId) public view returns (address) {
-        return ticketOwners[ticketId];
-    }
-
     function isValidTicket(uint256 ticketId) public view returns (bool) {
         return ticketOwners[ticketId] != address(0);
     }
