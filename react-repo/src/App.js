@@ -5,6 +5,7 @@ import MarketplacePage from "./components/MarketplacePage";
 import SecondaryMarketplacePage from "./components/SecondaryMarketplacePage";
 import Seats from "./components/Seats";
 import Checkout from "./components/Checkout";
+import Tickets from "./components/Tickets";
 
 function App() {
   return (
@@ -18,7 +19,8 @@ function App() {
           path="/secondary-marketplace"
           element={<SecondaryMarketplacePage />}
         />
-        <Route path="/checkout" element={<Checkout />}/>
+        <Route path="/tickets" element={<Tickets />} />
+        <Route path="/checkout" element={<Checkout />} />
       </Routes>
     </div>
   );

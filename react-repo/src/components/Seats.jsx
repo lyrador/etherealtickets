@@ -4,7 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import Concert from "../contracts/Concert.json";
 import Marketplace from "../contracts/Marketplace.json";
-import { CONCERT, MARKETPLACE } from "../constants/Address";
+import { CONCERT, MARKETPLACE, ORGANIZER } from "../constants/Address";
+import { CATEGORY_COLOR } from "../constants/Enum";
 
 import Button from "react-bootstrap/esm/Button";
 import Form from "react-bootstrap/Form";
@@ -50,6 +51,8 @@ function Seats() {
   const [rows, setRows] = useState(0);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [seatAddresses, setSeatAddresses] = useState([]);
+  const [seatCategories, setSeatCategories] = useState([]);
+  const [isOwner, setIsOwner] = useState(false);
 
   const fetchQueueData = async () => {
     const result = await marketplaceContract.getQueuePosition(concertId);
@@ -67,11 +70,27 @@ function Seats() {
       addresses.push(address);
     }
     setSeatAddresses(addresses);
+
+    const categories = [];
+    for (let i = 1; i <= totalSeats; i++) {
+      const category = await concertContract.getSeatCategory(concertId, i);
+      categories.push(CATEGORY_COLOR[category]);
+    }
+    console.log(categories);
+    setSeatCategories(categories);
+  };
+
+  const getAccountOnLoad = async () => {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    setIsOwner(accounts[0] == ORGANIZER);
   };
 
   useEffect(() => {
     fetchQueueData();
     fetchSeatsData();
+    getAccountOnLoad();
   }, []);
 
   const handleSelectSeat = async (seatNum) => {
@@ -114,15 +133,19 @@ function Seats() {
 
   return (
     <>
-      <h1>You are {queuePosition} in Queue</h1>
-      {queuePosition === 1 && (
+      <h1>
+        {isOwner
+          ? "You are the Organizer"
+          : `You are ${queuePosition} in Queue`}
+      </h1>
+      {(queuePosition === 1 || isOwner) && (
         <div style={{ display: "flex", height: "80vh" }}>
           <div className="column">
             <h2 style={{ textAlign: "center", margin: 50 }}>Stage</h2>
             {Array(rows)
               .fill(1)
               .map((row, rowIdx) => (
-                <div>
+                <div className="center">
                   {" "}
                   {Array(SEATS_PER_ROW)
                     .fill(1)
@@ -134,7 +157,12 @@ function Seats() {
                       ) {
                         return (
                           <Button
-                            style={{ width: 70, margin: 10 }}
+                            disabled={isOwner}
+                            style={{
+                              width: 70,
+                              margin: 10,
+                              backgroundColor: seatCategories[seatNum - 1],
+                            }}
                             onClick={() => handleSelectSeat(seatNum)}
                           >
                             {seatNum}
@@ -155,25 +183,38 @@ function Seats() {
                 </div>
               ))}
           </div>
-          <div className="column">
-            <h2 style={{ textAlign: "center", margin: 50 }}>Seat Selection</h2>
-            <Form onSubmit={handleBuyTicket}>
-              {selectedSeats.map((seat, idx) => (
-                <Form.Group className="m-5">
-                  <h4>Seat No: {seat.seatNum}</h4>
-                  <h4>Category: {seat.category}</h4>
-                  <h4>Amount: {seat.cost} ETH</h4>
-                  <Form.Control
-                    name={`passport${idx + 1}`}
-                    placeholder="Enter your passport ID"
-                  />
-                </Form.Group>
-              ))}
-              <Button style={{ marginLeft: 45 }} type="submit">
-                Buy Tickets
-              </Button>
-            </Form>
-          </div>
+          {!isOwner && (
+            <div className="column">
+              <h2 style={{ textAlign: "center", margin: 50 }}>
+                Seat Selection
+              </h2>
+              <Form onSubmit={handleBuyTicket} style={{ paddingBottom: 30 }}>
+                {selectedSeats.map((seat, idx) => (
+                  <Form.Group className="m-5">
+                    <h4>Seat No: {seat.seatNum}</h4>
+                    <h4>
+                      Category:{" "}
+                      <span
+                        style={{ color: CATEGORY_COLOR[seat.category - 1] }}
+                      >
+                        {seat.category}
+                      </span>
+                    </h4>
+                    <h4>Amount: {seat.cost} ETH</h4>
+                    <Form.Control
+                      name={`passport${idx + 1}`}
+                      placeholder="Enter your passport ID"
+                    />
+                  </Form.Group>
+                ))}
+                {selectedSeats.length > 0 && (
+                  <Button style={{ marginLeft: 45 }} type="submit">
+                    Buy Tickets
+                  </Button>
+                )}
+              </Form>
+            </div>
+          )}
         </div>
       )}
     </>

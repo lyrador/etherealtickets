@@ -102,10 +102,6 @@ contract Ticket {
         emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
     }
 
-    function getTicketOwner(uint256 ticketId) public view returns (address) {
-        return ticketOwners[ticketId];
-    }
-
     function isValidTicket(uint256 ticketId) public view returns (bool) {
         return ticketOwners[ticketId] != address(0);
     }
@@ -118,5 +114,12 @@ contract Ticket {
     // get ticket details by id
     function getTicketDetailsFromTicketId(uint256 ticketId) public view returns (Ticket memory) {
         return tickets[ticketId];
+    }
+    
+    // View ticket
+    function getTicketDetails(uint256 ticketId) public view returns (uint256, uint256, uint24, uint256) {
+        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
+        Ticket storage ticket = tickets[ticketId];
+        return (ticket.ticketId, ticket.concertId, ticket.category, ticket.cost);
     }
 }
