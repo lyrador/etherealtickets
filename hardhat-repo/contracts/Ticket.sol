@@ -114,4 +114,9 @@ contract Ticket {
         require(isValidTicket(ticketId), "Ticket is invalid");
         return tickets[ticketId].cost;
     }
+
+    // get ticket details by id
+    function getTicketDetailsFromTicketId(uint256 ticketId) public view returns (Ticket memory) {
+        return tickets[ticketId];
+    }
 }

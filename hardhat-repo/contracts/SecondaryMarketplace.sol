@@ -15,6 +15,21 @@ contract SecondaryMarketplace {
         uint256[] listedTicketIds;
     }
 
+    struct SecondaryMarketTicket {
+        uint256 ticketId;
+        uint256 concertId;
+        address prevTicketOwner;
+        uint24 category;
+        uint256 cost; 
+        string passportId; 
+        string concertName;
+        string concertLocation;
+        uint concertDate;
+        address listedBy;
+    }
+
+    uint256[] allListedTicketIds;
+
     Ticket ticketContract;
     Concert concertContract;
     Marketplace primaryMarketContract;
@@ -56,6 +71,7 @@ contract SecondaryMarketplace {
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
 
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
+        allListedTicketIds.push(ticketId);
     }
 
     function unlistTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
@@ -65,6 +81,7 @@ contract SecondaryMarketplace {
         
         // unlist ticket on secondary marketplace
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
+        removeElement(allListedTicketIds, ticketId);
     }
 
     function buyTicket(uint256 ticketId, uint256 concertId) public payable secondaryMarketplaceValidAndOpen(concertId) {
@@ -120,5 +137,44 @@ contract SecondaryMarketplace {
     function getListedTicketsFromConcert(uint256 concertId) public view returns (uint256[] memory) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         return secondaryMarketplaces[concertId].listedTicketIds;
+    }
+
+    // get ticket details by id
+    function getListedTicketDetailsArrayFromConcertId(uint256 concertId) public view returns (Ticket.Ticket[] memory) {
+        // for loop size
+        uint256[] memory listedTicketIds = getListedTicketsFromConcert(concertId);
+        uint len = listedTicketIds.length;
+        Ticket.Ticket[] memory ticketDetailsArr = new Ticket.Ticket[](len);
+        for (uint256 i = 0; i < listedTicketIds.length; i++) {
+            ticketDetailsArr[i] = ticketContract.getTicketDetailsFromTicketId(listedTicketIds[i]);
+        }
+        return ticketDetailsArr;
+    }
+
+    function getAllListedTickets() public view returns (uint256[] memory) {
+        return allListedTicketIds;
+    }
+
+    function getAllListedTicketDetailsArray() public view returns (SecondaryMarketTicket[] memory) {
+        // for loop size
+        uint256[] memory listedTicketIds = getAllListedTickets();
+        SecondaryMarketTicket[] memory ticketDetailsArr = new SecondaryMarketTicket[](listedTicketIds.length);
+        for (uint256 i = 0; i < listedTicketIds.length; i++) {
+            Ticket.Ticket memory ticket = ticketContract.getTicketDetailsFromTicketId(listedTicketIds[i]);
+            Concert.Concert memory concert = concertContract.getConcertDetailsFromConcertId(ticket.concertId);
+            uint256 ticketId = ticket.ticketId;
+            uint256 concertId = ticket.concertId;
+            address prevTicketOwner = ticket.prevTicketOwner;
+            uint24 category = ticket.category;
+            uint256 cost = ticket.cost; 
+            string memory passportId = ticket.passportId; 
+            string memory concertName = concert.name;
+            string memory concertLocation = concert.location;
+            uint concertDate = concert.concertDate;
+            address listedBy = ticketContract.getOwner(ticketId);
+            SecondaryMarketTicket memory newSecondaryMarketTicket = SecondaryMarketTicket(ticketId, concertId, prevTicketOwner, category, cost, passportId, concertName, concertLocation, concertDate, listedBy);
+            ticketDetailsArr[i] = newSecondaryMarketTicket;
+        }
+        return ticketDetailsArr;
     }
 }
