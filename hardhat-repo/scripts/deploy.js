@@ -54,7 +54,7 @@ async function copySecondaryMarketplaceArtifact() {
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const [addr1, addr2] = await ethers.getSigners();
+  const [organiser, addr1, addr2] = await ethers.getSigners();
 
   const concert = await hre.ethers.deployContract("Concert");
   await concert.waitForDeployment();
@@ -143,23 +143,24 @@ async function main() {
   );
   await concert.updateConcertStage(4);
 
-  // // ------ Secondary Marketplace ------
-  // const standardisedTicketCost = ONE_ETH;
-  // // Concert 5:
-  // await concert.createConcert(
-  //   "Bruno Mars Day 1",
-  //   "Indoor Stadium",
-  //   [ONE_ETH],
-  //   [1],
-  //   5,
-  //   5
-  // );
-  // await concert.updateConcertStage(5); //update to primary_sale
-  // await marketplace.connect(addr1).joinQueue(5);
-  // await marketplace.connect(addr1).buyTicket(5, [1], ["S1234567A"], {value: standardisedTicketCost});
-  // await concert.updateConcertStage(5); //update to secondary_sale
-  // await secondaryMarketPlace.createSecondaryMarketplace(5);
-  // await secondaryMarketPlace.connect(addr1).listTicket(1, "S1234567A");
+  // ------ Secondary Marketplace ------
+  const standardisedTicketCost = ONE_ETH;
+  // Concert 5:
+  await concert.createConcert(
+    "Bruno Mars Day 1",
+    "Indoor Stadium",
+    [ONE_ETH],
+    [1],
+    5,
+    5
+  );
+  await concert.updateConcertStage(5); //update to primary_sale
+  await marketplace.connect(addr1).joinQueue(5);
+  await marketplace.connect(addr1).buyTicket(5, [1], ["S1234567A"], {value: standardisedTicketCost});
+  await concert.updateConcertStage(5); //update to secondary_sale
+  await secondaryMarketPlace.createSecondaryMarketplace(5);
+  await secondaryMarketPlace.connect(addr1).listTicket(1, "S1234567A");
+  await marketplace.connect(addr1).transferFrom(addr1, secondaryMarketPlace, 1);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

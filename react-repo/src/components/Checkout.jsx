@@ -1,8 +1,6 @@
 import React from "react";
 import NavBar from "./NavBar";
 import Header from "./Header";
-import { DataGrid } from '@mui/x-data-grid';
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import PurchaseAlertDialog from "./PurchaseAlertDialog";
 import { useLocation } from "react-router-dom";
@@ -15,6 +13,21 @@ import swift from '../images/swift-eras.jpg';
 import bruno from '../images/bruno.jpg';
 
 import { ethers } from 'ethers';
+import Concert from "../contracts/Concert.json";
+import Ticket from "../contracts/Ticket.json";
+import Marketplace from "../contracts/Marketplace.json";
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
+import { CONCERT, TICKET, MARKETPLACE, SECONDARY_MARKETPLACE } from "../constants/Address";
+
+import { BigNumber } from "ethers";
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+const signer = provider.getSigner();
+const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
+const concertContract = new ethers.Contract(CONCERT, Concert.abi, signer);
+const marketplaceContract = new ethers.Contract(MARKETPLACE, Marketplace.abi, signer);
+const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
@@ -22,9 +35,10 @@ function Checkout() {
     const navigate = useNavigate();
     const [open, setOpen] = React.useState(false);
     const { state } = useLocation();
-    const { rowId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
+    const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
 
     const [balance, setBalance] = useState('0');
+    const [currentAcct, setCurrentAcct] = useState('');
 
     // Function to get the balance of the current account
     const getBalance = async (provider, account) => {
@@ -37,6 +51,45 @@ function Checkout() {
         }
     };
 
+    // let provider2 = "";
+
+    // async function connectWallet() {
+    //     if (window.ethereum) {  // Check if MetaMask is installed
+    //         try {
+    //             await window.ethereum.request({ method: 'eth_requestAccounts' });  // Request account access
+    //             provider2 = new ethers.providers.Web3Provider(window.ethereum);
+    //             return provider2.getSigner();  // Returns the signer associated with the connected account
+    //         } catch (error) {
+    //             console.error("Error connecting to MetaMask:", error);
+    //         }
+    //     } else {
+    //         alert("Please install MetaMask to use this feature!");
+    //     }
+    // }
+    
+    // // Function to call approve on the contract
+    // async function approveTokens() {
+    //     try {
+    //         const signer = await connectWallet();
+    //         const connectedContract = marketplaceContract.connect(signer);
+    //         const approvalResponse = await connectedContract.approve(SECONDARY_MARKETPLACE, 1);
+    //         console.log('Approval transaction hash:', approvalResponse.hash);
+    //     } catch (error) {
+    //         console.error('Error during token approval:', error);
+    //     }
+    // }
+
+    const buyTickets = async () => {
+        console.log(state);
+        console.log("CURRENT ACCT:");
+        console.log(currentAcct);
+        const TWO_ETH = ethers.utils.parseEther("2.0"); 
+        //await marketplaceContract.connect(signer1).approve(SECONDARY_MARKETPLACE, 1);
+        await secondaryMarketplaceContract.buyTicket(parseInt(ticketId), parseInt(concertId), {value: TWO_ETH});
+        await marketplaceContract.transferFrom(MARKETPLACE, currentAcct, ticketId);
+        console.log("Buy Tickets");
+    }
+
     // Function to request account connection
     const requestAccount = async () => {
         if (window.ethereum) {
@@ -44,6 +97,7 @@ function Checkout() {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 getBalance(provider, accounts[0]);
+                setCurrentAcct(accounts[0]);
             } catch (error) {
                 console.error(error);
             }
@@ -64,41 +118,6 @@ function Checkout() {
         setOpen(false);
     };
 
-    const columns = [
-        { field: 'id', headerName: 'ID', flex: 1 },
-        { field: 'concertName', headerName: 'Concert Name', flex: 1 },
-        { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
-        { field: 'category', headerName: 'Category', width: 130 },
-        { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
-        { field: 'listedBy', headerName: 'Listed By', flex: 1 },
-        {
-            field: 'concertDate',
-            headerName: 'Concert Date',
-            type: 'string',
-            flex: 1,
-        },
-        {
-            field: 'buyButton', headerName: '', width: 150, disableClickEventBubbling: true,
-            renderCell: (cellValue) => {
-                return (
-                    <>
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                console.log(cellValue.row.buyButton);
-                                handleClickOpen();
-                            }
-                            }
-                        >
-                            Buy
-                        </Button>
-                        <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
-                    </>
-                );
-            }
-        },
-    ];
-
     // Assuming you have a data structure for the financials like this:
     const financials = {
         balance: Number(balance),
@@ -116,7 +135,7 @@ function Checkout() {
     return (
         <>
             <Header />
-            <h2>Checkout with rowId : {rowId}</h2>
+            <h2>Checkout with ticketId : {ticketId}</h2>
             <h3>{balance}</h3>
             <TicketPurchaseCard 
                 cardImg={swift} 
@@ -133,7 +152,7 @@ function Checkout() {
             <>
                 <Button
                     variant="contained"
-                    onClick={() => setOpen(true)}
+                    onClick={() => buyTickets()}
                 >
                     Proceed
                 </Button>

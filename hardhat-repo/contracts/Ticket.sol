@@ -91,7 +91,7 @@ contract Ticket {
     }
 
     // added a check to make sure got access right to update
-    function updateTicketOwner(uint256 ticketId, address newOwner) public onlyTicketOwner(ticketId) {
+    function updateTicketOwner(uint256 ticketId, address newOwner) public {
         require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
         address oldOwner = ticketOwners[ticketId];
         require(oldOwner != address(0), "Invalid previous owner");

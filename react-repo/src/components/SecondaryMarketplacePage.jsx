@@ -39,6 +39,7 @@ function SecondaryMarketplacePage() {
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 1 },
+    { field: 'concertId', headerName: 'Concert ID', flex: 1 },
     { field: 'concertName', headerName: 'Concert Name', flex: 1 },
     { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
     { field: 'category', headerName: 'Category', width: 130 },
@@ -61,12 +62,14 @@ function SecondaryMarketplacePage() {
                 console.log(cellValue.row.buyButton);
                 navigate('/checkout', {
                   state: {
-                    rowId: cellValue.row.id,
+                    ticketId: parseInt(cellValue.row.id),
+                    concertId: parseInt(cellValue.row.concertId),
                     concertName: cellValue.row.concertName,
                     concertLoc: cellValue.row.concertLoc,
-                    category: cellValue.row.category,
-                    ticketCost: cellValue.row.ticketCost,
-                    concertDate: cellValue.row.concertDate
+                    category: parseInt(cellValue.row.category),
+                    ticketCost: parseInt(cellValue.row.ticketCost),
+                    concertDate: parseInt(cellValue.row.concertDate),
+                    //listedBy: cellValue.row.listedBy
                   }
                 });
               }
@@ -90,6 +93,7 @@ function SecondaryMarketplacePage() {
       console.log(parseInt(ticket.ticketId));
       return {
         id: parseInt(ticket.ticketId),
+        concertId: parseInt(ticket.concertId),
         concertName: ticket.concertName,
         concertLoc: ticket.concertLocation,
         category: parseInt(ticket.category),

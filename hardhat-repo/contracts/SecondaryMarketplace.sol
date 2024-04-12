@@ -69,7 +69,6 @@ contract SecondaryMarketplace {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
         require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
-
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
         allListedTicketIds.push(ticketId);
     }
@@ -78,7 +77,6 @@ contract SecondaryMarketplace {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
         require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
-        
         // unlist ticket on secondary marketplace
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
         removeElement(allListedTicketIds, ticketId);
@@ -96,8 +94,6 @@ contract SecondaryMarketplace {
         // Buyer transfers ticket to seller, now that organiser received buyer money, organiser transfer eth to seller
         address ticketOwner = ticketContract.getOwner(ticketId);
         payable(ticketOwner).transfer(ticketPrice - sellingCommission);
-        //primaryMarketContract.approve(address(this), ticketId);
-        primaryMarketContract.transferFrom(ticketOwner, msg.sender, ticketId);
         ticketContract.updateTicketOwner(ticketId, msg.sender);
 
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
