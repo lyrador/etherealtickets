@@ -6,39 +6,42 @@ import Header from "./Header";
 
 import { ethers } from "ethers";
 import Concert from "../contracts/Concert.json";
-import { CONCERT } from "../constants/Address";
+import { CONCERT, ORGANIZER } from "../constants/Address";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
 const contract = new ethers.Contract(CONCERT, Concert.abi, signer);
 
 function AllConcerts() {
-  const [concert, setConcert] = useState("");
+  const [isOwner, setIsOwner] = useState(false);
 
-  const getConcert = async () => {
-    const name = await contract.getName(1);
-    setConcert(name);
+  const getAccountOnLoad = async () => {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    setIsOwner(accounts[0] == ORGANIZER);
   };
 
-  // const onlyOwnerMethod = async () => {
-  //   try {
-  //     await contract.deleteConcert(1);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
+  const handleAccountsChanged = (accounts) => {
+    setIsOwner(accounts[0] == ORGANIZER);
+  };
 
   useEffect(() => {
-    getConcert();
+    getAccountOnLoad();
 
-    //onlyOwnerMethod();
+    // Subscribe to Metamask account changes
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
   }, []);
 
   return (
     <>
       <Header />
       <NavBar />
-      <h2>Concert: {concert}</h2>
+      {isOwner ? (
+        <h2>Display Concert Table</h2>
+      ) : (
+        <h2>You do not have access to this tab</h2>
+      )}
     </>
   );
 }
