@@ -114,4 +114,11 @@ contract Ticket {
         require(isValidTicket(ticketId), "Ticket is invalid");
         return tickets[ticketId].cost;
     }
+
+    // View ticket
+    function getTicketDetails(uint256 ticketId) public view returns (uint256, uint256, uint24, uint256) {
+        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
+        Ticket storage ticket = tickets[ticketId];
+        return (ticket.ticketId, ticket.concertId, ticket.category, ticket.cost);
+    }
 }
