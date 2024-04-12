@@ -97,7 +97,7 @@ contract SecondaryMarketplace {
         address ticketOwner = ticketContract.getOwner(ticketId);
         payable(ticketOwner).transfer(ticketPrice - sellingCommission);
         //primaryMarketContract.approve(address(this), ticketId);
-        primaryMarketContract.transferFrom(ticketOwner, msg.sender, ticketId);
+        ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
         ticketContract.updateTicketOwner(ticketId, msg.sender);
 
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);

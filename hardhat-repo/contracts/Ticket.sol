@@ -1,8 +1,9 @@
 pragma solidity ^0.8.24;
 
 import "./Concert.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract Ticket {
+contract Ticket is ERC721 {
     
     Concert concertContract;
     
@@ -36,8 +37,8 @@ contract Ticket {
         uint256 timestamp
     );
 
-    constructor(address _concertAddress) {
-        concertContract = Concert(_concertAddress);
+    constructor(address concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
+        concertContract = Concert(concertAddress);
     }
 
     function createTicket(
@@ -59,6 +60,7 @@ contract Ticket {
             passportId: passportId // assignment unique passportId of current holder
         });
 
+         _safeMint(buyer, ticketId);
         ticketOwners[ticketId] = buyer; // Marking the ticket's creator as its initial owner (buyer)
 
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);

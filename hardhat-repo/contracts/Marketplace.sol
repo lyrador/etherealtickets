@@ -2,11 +2,10 @@ pragma solidity ^0.8.24;
 
 import "./Concert.sol";
 import "./Ticket.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 
-contract Marketplace is ERC721 {
+contract Marketplace {
 
     address owner; // Concert Organizer
     uint256 ticketId; // tokenId of NFT
@@ -19,18 +18,11 @@ contract Marketplace is ERC721 {
     mapping(uint256 => uint256[]) seatsTaken;
     mapping(uint256 => address[]) concertQueues;
 
-    constructor(Concert concertAddress, Ticket ticketAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
+    constructor(Concert concertAddress, Ticket ticketAddress) public {
         concertContract = concertAddress;
         ticketContract = ticketAddress;
         owner = msg.sender;
     }
-
-    // constructor(Concert concertAddress, Ticket ticketAddress, string memory _name,
-    //     string memory _symbol) ERC721(_name, _symbol) public {
-    //     concertContract = concertAddress;
-    //     ticketContract = ticketAddress;
-    //     owner = msg.sender;
-    // }
 
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -92,7 +84,6 @@ contract Marketplace is ERC721 {
             seatsTaken[concertId].push(seatNumbers[i]);
             // Mint NFT
             ticketId++;
-            _safeMint(msg.sender, ticketId);
             // Create ticket object
             uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
             uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);

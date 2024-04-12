@@ -15,13 +15,13 @@ describe("Concert", function () {
 
     const ticketContract = await ethers.deployContract("Ticket", [
       concertContract.target,
+      "EtherealTickets",
+      "ET",
     ]);
 
     const marketplaceContract = await ethers.deployContract("Marketplace", [
       concertContract.target,
       ticketContract.target,
-      "EtherealTickets",
-      "ET",
     ]);
 
     // Fixtures can return anything you consider useful for your tests

@@ -13,6 +13,8 @@ const {
   
       const ticketContract = await ethers.deployContract("Ticket", [
         concertContract.target,
+        "EtherealTickets",
+        "ET",
       ]);
     
       return { concertContract, ticketContract, owner, addr1}
@@ -39,7 +41,7 @@ const {
       // Update ticket's ownership
       await ticketContract.connect(owner).updateTicketOwner(1, addr1.address);
       // Check the new owner is correct
-      expect(await ticketContract.getTicketOwner(1)).to.equal(addr1.address);
+      expect(await ticketContract.getOwner(1)).to.equal(addr1.address);
     });
 
     // Validate ticket with passportId

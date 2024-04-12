@@ -25,12 +25,12 @@ describe("SecondaryMarketplace", function () {
         const concertContract = await ethers.deployContract("Concert");
         const ticketContract = await ethers.deployContract("Ticket", [
             concertContract.target,
+            "EtherealTickets",
+            "ET",
         ]);
         const primaryMarketContract = await ethers.deployContract("Marketplace", [
             concertContract.target,
             ticketContract.target,
-            "EtherealTickets",
-            "ET",
         ]);
         const secondaryMarketContract = await ethers.deployContract("SecondaryMarketplace", [
             concertContract.target,
@@ -80,7 +80,7 @@ describe("SecondaryMarketplace", function () {
         const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
 
         // Verify that ticket owner has bought ticket successfully
-        expect(await ticketContract.getTicketOwner(1)).to.equal(addr1);
+        expect(await ticketContract.getOwner(1)).to.equal(addr1);
         const finalBuyerBal = await ethers.provider.getBalance(addr1);
         expect(finalBuyerBal).to.equal(initialBuyerBal - standardisedTicketCost - BigInt(commissionFeePrimaryMarket) - buyTicketGas);
     }
@@ -328,7 +328,6 @@ describe("SecondaryMarketplace", function () {
             const { 
                 concertContract,
                 ticketContract,
-                primaryMarketContract,
                 secondaryMarketContract,
                 addr1,
                 addr2
@@ -351,7 +350,7 @@ describe("SecondaryMarketplace", function () {
             const ticketCost = ONE_ETH;
     
             // Case where buy transaction is successful
-            let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: TWO_ETH});
     
             const approvalTxReceipt = await approvalTx.wait();
@@ -361,7 +360,7 @@ describe("SecondaryMarketplace", function () {
             const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
     
             // Check that ticket has been transferred to buyer, no more tickets listed
-            expect(await ticketContract.getTicketOwner(1)).to.equal(addr2);
+            expect(await ticketContract.getOwner(1)).to.equal(addr2);
             expect(await secondaryMarketContract.getListedTicketsFromConcert(1)).to.be.an('array').that.is.empty;
     
             // Check the balance of the contract after receiving Ether
@@ -378,7 +377,7 @@ describe("SecondaryMarketplace", function () {
             // Deploy
             const { 
                 concertContract,
-                primaryMarketContract,
+                ticketContract,
                 secondaryMarketContract,
                 addr1,
                 addr2
@@ -394,7 +393,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
     
             // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
-            let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             let buy = secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: ONE_ETH});
     
             await expect(buy).to.be.revertedWith(
@@ -405,14 +404,14 @@ describe("SecondaryMarketplace", function () {
         it("Should fail to buy ticket if secondary marketplace not open", async function () {
             // Deploy
             const { 
-                primaryMarketContract,
+                ticketContract,
                 secondaryMarketContract, 
                 addr1,
                 addr2
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Verify that cannot buy ticket on secondary marketplace if stage not SECONDARY_SALE
-            let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             await expect(
                 secondaryMarketContract.connect(addr2).buyTicket(1, 1)
             ).to.be.revertedWith("Marketplace not open");
@@ -422,7 +421,7 @@ describe("SecondaryMarketplace", function () {
             // Deploy
             const { 
                 concertContract,
-                primaryMarketContract,
+                ticketContract,
                 secondaryMarketContract,
                 addr1,
                 addr2
@@ -438,7 +437,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
     
             // Verify that cannot buy ticket if ticketId not valid
-            let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             await expect(
                 secondaryMarketContract.connect(addr2).buyTicket(9999, 1)
             ).to.be.revertedWith("Ticket is invalid");
@@ -448,7 +447,7 @@ describe("SecondaryMarketplace", function () {
             // Deploy
             const { 
                 concertContract,
-                primaryMarketContract,
+                ticketContract,
                 secondaryMarketContract,
                 addr1
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
@@ -463,7 +462,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
             
             // Verify that cannot buy ticket if owner is buying his/her own listed ticket
-            let approvalTx = await primaryMarketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             await expect(
                 secondaryMarketContract.connect(addr1).buyTicket(1, 1)
             ).to.be.revertedWith("Owner cannot buy own listed ticket");
