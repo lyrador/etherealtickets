@@ -53,18 +53,19 @@ async function copySecondaryMarketplaceArtifact() {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  const [addr1, addr2] = await ethers.getSigners();
+  const [deployer, addr1, addr2] = await ethers.getSigners();
 
   const concert = await hre.ethers.deployContract("Concert");
   await concert.waitForDeployment();
-  const ticket = await hre.ethers.deployContract("Ticket", [concert.target]);
+  const ticket = await hre.ethers.deployContract("Ticket", [
+    concert.target,
+    "EtherealTickets",
+    "ET",
+  ]);
   await ticket.waitForDeployment();
   const marketplace = await hre.ethers.deployContract("Marketplace", [
     concert.target,
     ticket.target,
-    "EtherealTickets",
-    "ET",
   ]);
   await marketplace.waitForDeployment();
   const secondaryMarketPlace = await hre.ethers.deployContract(
@@ -97,22 +98,22 @@ async function main() {
   const ONE_ETH = ethers.parseEther("1.0");
   const TWO_ETH = ethers.parseEther("2.0");
   const THREE_ETH = ethers.parseEther("3.0");
+  const SIX_ETH = ethers.parseEther("6.0");
 
   // preload concert data
-  // Concert 1: Stage = PRIMARY_SALE
+  // Concert 1: Stage = INITIALIZATION
   await concert.createConcert(
-    "Taylor Swift Day 1",
+    "Coldplay",
     "National Stadium",
     [THREE_ETH, TWO_ETH, ONE_ETH],
     [10, 20, 30],
     1,
     1
   );
-  await concert.updateConcertStage(1);
 
-  // Concert 2: Stage = SECONDARY_SALE
+  // Concert 2: Stage = PRIMARY_SALE
   await concert.createConcert(
-    "Taylor Swift Day 2",
+    "Ed Sheeran",
     "National Stadium",
     [THREE_ETH, TWO_ETH, ONE_ETH],
     [10, 20, 30],
@@ -120,21 +121,30 @@ async function main() {
     2
   );
   await concert.updateConcertStage(2);
-  await concert.updateConcertStage(2);
 
-  // Concert 3: Stage = INITIALIZATION
+  // Concert 3: Stage = SECONDARY_SALE
   await concert.createConcert(
-    "Taylor Swift Day 3",
+    "Taylor Swift",
     "National Stadium",
     [THREE_ETH, TWO_ETH, ONE_ETH],
     [10, 20, 30],
     3,
     3
   );
+  await concert.updateConcertStage(3);
+  await concert.updateConcertStage(3);
 
-  // Concert 4: Stage = PRIMARY_SALE
+  // Ticket 1
+  await marketplace.connect(addr1).joinQueue(3);
+  await marketplace
+    .connect(addr1)
+    .buyTicket(3, [1], ["S1234567A"], { value: THREE_ETH });
+  // await secondaryMarketPlace.createSecondaryMarketplace(3);
+  // await secondaryMarketPlace.connect(addr1).listTicket(1, "S1234567A");
+
+  // Concert 4: Stage = OPEN
   await concert.createConcert(
-    "Taylor Swift Day 4",
+    "Bruno Mars",
     "National Stadium",
     [THREE_ETH, TWO_ETH, ONE_ETH],
     [10, 20, 30],
@@ -142,6 +152,17 @@ async function main() {
     4
   );
   await concert.updateConcertStage(4);
+  await concert.updateConcertStage(4);
+
+  // Ticket 2 and 3
+  await marketplace.connect(addr1).joinQueue(4);
+  await marketplace
+    .connect(addr1)
+    .buyTicket(4, [1, 2], ["S1234567A", "S1234567B"], { value: SIX_ETH });
+
+  await concert.updateConcertStage(4);
+
+  // preload ticket data
 
   // // ------ Secondary Marketplace ------
   // const standardisedTicketCost = ONE_ETH;

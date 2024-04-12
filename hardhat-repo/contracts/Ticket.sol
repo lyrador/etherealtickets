@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract Ticket is ERC721 {
     
     Concert concertContract;
+    uint256 numOfTickets;
     
     struct Ticket {
         uint256 ticketId;
@@ -50,6 +51,8 @@ contract Ticket is ERC721 {
         string memory passportId) public { 
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
         //require(concertContract.getOwner() == msg.sender, "Only the concert owner can create tickets");
+
+        numOfTickets = ticketId;
 
         tickets[ticketId] = Ticket({
             ticketId: ticketId,
@@ -123,5 +126,28 @@ contract Ticket is ERC721 {
         require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
         Ticket storage ticket = tickets[ticketId];
         return (ticket.ticketId, ticket.concertId, ticket.category, ticket.cost);
+    }
+
+    // FOR USE CASE: View Owned Tickets
+    function getOwnedTickets() public view returns (Ticket[] memory) {
+
+        uint count = 0;
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (getOwner(i) == msg.sender) {
+                count++;
+            }
+        }
+
+        Ticket[] memory ownedTickets = new Ticket[](count);
+        uint index = 0;
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (getOwner(i) == msg.sender) {
+                ownedTickets[index] = tickets[i];
+                index++;
+            }
+        }
+
+        return ownedTickets;
+
     }
 }
