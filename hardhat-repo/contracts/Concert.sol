@@ -78,7 +78,7 @@ contract Concert {
         uint256 _salesDate
     ) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
-        
+        require(concerts[concertId].stage == Stage.INITIALIZATION, "Concert can only be updated at INITIALIZATION stage");
         concerts[concertId].name = _name;
         concerts[concertId].location = _location;
         concerts[concertId].ticketCost = _ticketCost;
