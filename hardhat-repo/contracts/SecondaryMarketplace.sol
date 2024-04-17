@@ -67,7 +67,7 @@ contract SecondaryMarketplace {
     // reseller list ticket
     function listTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
-        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
 
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
@@ -76,7 +76,7 @@ contract SecondaryMarketplace {
 
     function unlistTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
-        require(ticketContract.getOwner(ticketId) == msg.sender, "Not owner of ticket");
+        require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
         
         // unlist ticket on secondary marketplace
@@ -86,7 +86,7 @@ contract SecondaryMarketplace {
 
     function buyTicket(uint256 ticketId, uint256 concertId) public payable secondaryMarketplaceValidAndOpen(concertId) {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
-        require(ticketContract.getOwner(ticketId) != msg.sender, "Owner cannot buy own listed ticket");
+        require(ticketContract.ownerOf(ticketId) != msg.sender, "Owner cannot buy own listed ticket");
 
         uint256 ticketPrice = ticketContract.getTicketCost(ticketId);
         require(msg.value >= ticketPrice + buyingCommission, "Insufficient amount to buy");
@@ -94,11 +94,11 @@ contract SecondaryMarketplace {
         payable(msg.sender).transfer(excessWei);
 
         // Buyer transfers ticket to seller, now that organiser received buyer money, organiser transfer eth to seller
-        address ticketOwner = ticketContract.getOwner(ticketId);
+        address ticketOwner = ticketContract.ownerOf(ticketId);
         payable(ticketOwner).transfer(ticketPrice - sellingCommission);
         //primaryMarketContract.approve(address(this), ticketId);
         ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
-        ticketContract.updateTicketOwner(ticketId, msg.sender);
+        //ticketContract.updateTicketOwner(ticketId, msg.sender);
 
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
     }
@@ -171,7 +171,7 @@ contract SecondaryMarketplace {
             string memory concertName = concert.name;
             string memory concertLocation = concert.location;
             uint concertDate = concert.concertDate;
-            address listedBy = ticketContract.getOwner(ticketId);
+            address listedBy = ticketContract.ownerOf(ticketId);
             SecondaryMarketTicket memory newSecondaryMarketTicket = SecondaryMarketTicket(ticketId, concertId, prevTicketOwner, category, cost, passportId, concertName, concertLocation, concertDate, listedBy);
             ticketDetailsArr[i] = newSecondaryMarketTicket;
         }

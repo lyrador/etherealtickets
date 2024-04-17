@@ -18,7 +18,6 @@ contract Ticket is ERC721 {
     }
 
     mapping(uint256 => Ticket) public tickets;
-    mapping(uint256 => address) public ticketOwners;
 
     event TicketCreated(
         uint256 indexed ticketId, 
@@ -64,19 +63,13 @@ contract Ticket is ERC721 {
         });
 
          _safeMint(buyer, ticketId);
-        ticketOwners[ticketId] = buyer; // Marking the ticket's creator as its initial owner (buyer)
 
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
     }
 
     modifier onlyTicketOwner(uint256 ticketId) {
-        require(msg.sender == ticketOwners[ticketId], "Caller is not the ticket owner"); 
+        require(msg.sender == ownerOf(ticketId), "Caller is not the ticket owner"); 
         _; 
-    }
-
-    function getOwner(uint256 ticketId) public view returns (address) {
-        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
-        return ticketOwners[ticketId];
     }
 
     function validateTicket(uint256 ticketId, string memory passportId) public view returns (bool) {
@@ -95,20 +88,8 @@ contract Ticket is ERC721 {
         return tickets[ticketId].prevTicketOwner;
     }
 
-    // added a check to make sure got access right to update
-    function updateTicketOwner(uint256 ticketId, address newOwner) public onlyTicketOwner(ticketId) {
-        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
-        address oldOwner = ticketOwners[ticketId];
-        require(oldOwner != address(0), "Invalid previous owner");
-        require(newOwner != address(0), "Invalid new owner"); 
-
-        // update owner in the mapping
-        ticketOwners[ticketId] = newOwner;
-        emit TicketOwnerUpdated(ticketId, oldOwner, newOwner, tickets[ticketId].concertId, block.timestamp);
-    }
-
     function isValidTicket(uint256 ticketId) public view returns (bool) {
-        return ticketOwners[ticketId] != address(0);
+        return ownerOf(ticketId) != address(0);
     }
 
     function getTicketCost(uint256 ticketId) public view returns (uint256) { 
@@ -133,7 +114,7 @@ contract Ticket is ERC721 {
 
         uint count = 0;
         for (uint i = 1; i <= numOfTickets; i++) {
-            if (getOwner(i) == msg.sender) {
+            if (ownerOf(i) == msg.sender) {
                 count++;
             }
         }
@@ -141,7 +122,7 @@ contract Ticket is ERC721 {
         Ticket[] memory ownedTickets = new Ticket[](count);
         uint index = 0;
         for (uint i = 1; i <= numOfTickets; i++) {
-            if (getOwner(i) == msg.sender) {
+            if (ownerOf(i) == msg.sender) {
                 ownedTickets[index] = tickets[i];
                 index++;
             }

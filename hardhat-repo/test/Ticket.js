@@ -57,36 +57,36 @@ describe("Ticket", function () {
       .withArgs(1, 1, owner.address, 1, ONE_ETH, "PASS123");
   });
 
-  // Transfer ticket
-  it("Should allow ticket owner to update ticket ownership", async function () {
-    const { concertContract, ticketContract, owner, addr1 } = await loadFixture(
-      deployFixture
-    );
-    // Create concert
-    await concertContract
-      .connect(owner)
-      .createConcert(
-        "Taylor Swift Day 1",
-        "National Stadium",
-        [100, 200, 300],
-        [50, 100, 150],
-        20250101,
-        20240101
-      );
-    // Create ticket
-    await ticketContract.createTicket(
-      1,
-      1,
-      owner.address,
-      1,
-      ONE_ETH,
-      "PASS123"
-    );
-    // Update ticket's ownership
-    await ticketContract.connect(owner).updateTicketOwner(1, addr1.address);
-    // Check the new owner is correct
-    expect(await ticketContract.getOwner(1)).to.equal(addr1.address);
-  });
+  // // Transfer ticket
+  // it("Should allow ticket owner to update ticket ownership", async function () {
+  //   const { concertContract, ticketContract, owner, addr1 } = await loadFixture(
+  //     deployFixture
+  //   );
+  //   // Create concert
+  //   await concertContract
+  //     .connect(owner)
+  //     .createConcert(
+  //       "Taylor Swift Day 1",
+  //       "National Stadium",
+  //       [100, 200, 300],
+  //       [50, 100, 150],
+  //       20250101,
+  //       20240101
+  //     );
+  //   // Create ticket
+  //   await ticketContract.createTicket(
+  //     1,
+  //     1,
+  //     owner.address,
+  //     1,
+  //     ONE_ETH,
+  //     "PASS123"
+  //   );
+  //   // Update ticket's ownership
+  //   await ticketContract.connect(owner).updateTicketOwner(1, addr1.address);
+  //   // Check the new owner is correct
+  //   expect(await ticketContract.getOwner(1)).to.equal(addr1.address);
+  // });
 
   // Validate ticket with passportId
   it("Should validate a ticket with the correct passportId", async function () {

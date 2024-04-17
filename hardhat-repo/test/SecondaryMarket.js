@@ -80,7 +80,7 @@ describe("SecondaryMarketplace", function () {
         const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
 
         // Verify that ticket owner has bought ticket successfully
-        expect(await ticketContract.getOwner(1)).to.equal(addr1);
+        expect(await ticketContract.ownerOf(1)).to.equal(addr1);
         const finalBuyerBal = await ethers.provider.getBalance(addr1);
         expect(finalBuyerBal).to.equal(initialBuyerBal - standardisedTicketCost - BigInt(commissionFeePrimaryMarket) - buyTicketGas);
     }
@@ -360,7 +360,7 @@ describe("SecondaryMarketplace", function () {
             const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
     
             // Check that ticket has been transferred to buyer, no more tickets listed
-            expect(await ticketContract.getOwner(1)).to.equal(addr2);
+            expect(await ticketContract.ownerOf(1)).to.equal(addr2);
             expect(await secondaryMarketContract.getListedTicketsFromConcert(1)).to.be.an('array').that.is.empty;
     
             // Check the balance of the contract after receiving Ether
@@ -440,7 +440,7 @@ describe("SecondaryMarketplace", function () {
             let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
             await expect(
                 secondaryMarketContract.connect(addr2).buyTicket(9999, 1)
-            ).to.be.revertedWith("Ticket is invalid");
+            ).to.be.revertedWithCustomError(ticketContract, "ERC721NonexistentToken");
         });
 
         it("Should fail to buy ticket if owner is buying own listed ticket", async function () {
