@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import swift from '../images/swift-eras.jpg';
 import bruno from '../images/bruno.jpg';
 
-import { ethers } from 'ethers';
+import { ethers, BigNumber } from "ethers";
 
 import Concert from "../contracts/Concert.json";
 import Ticket from "../contracts/Ticket.json";
@@ -63,13 +63,40 @@ function Checkout() {
         }
     };
 
+    const getTotalCost = () => {
+        let totalCostInWei = ethers.constants.Zero;
+      
+        const seatCostInWei = ethers.utils.parseEther(ticketCost.toString());
+        totalCostInWei = totalCostInWei.add(seatCostInWei);
+      
+        return totalCostInWei;
+      };
+
     // Function to purchase
     const purchase = async () => {
         try {
-            let totalCostInWei = ethers.constants.Zero;
-            totalCostInWei.add(ticketCost);
-            await secondaryMarketplaceContract.buyTicket(ticketId, concertId, { value: totalCostInWei });
+            console.log("Ticket Cost: ")
+            console.log(ticketCost);
+
+            console.log("Buying Commission: ")
+            const buyingCommission = await secondaryMarketplaceContract.getBuyingCommission();
+            console.log(buyingCommission);
+
+            console.log("Total Cost: ")
+            const totalCost = parseInt(buyingCommission) + parseInt(ticketCost);
+            console.log(totalCost);
+
+            console.log("Total Cost in Wei: ")
+            const totalCostInWei = ethers.utils.parseUnits(totalCost.toFixed(), "wei");
+            console.log(totalCostInWei);
+            console.log(parseInt(totalCostInWei));
+
+            console.log("Buy Result: ")
+            await secondaryMarketplaceContract.buyTicket(ticketId, concertId, {
+                value: totalCostInWei,
+            });
             console.log("Success");
+            navigate(-1);
         } catch (err) {
             console.log(err);
         }

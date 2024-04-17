@@ -62,7 +62,7 @@ contract Ticket is ERC721 {
             passportId: passportId // assignment unique passportId of current holder
         });
 
-         _safeMint(buyer, ticketId);
+        _safeMint(buyer, ticketId);
 
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
     }
@@ -110,11 +110,11 @@ contract Ticket is ERC721 {
     }
 
     // FOR USE CASE: View Owned Tickets
-    function getOwnedTickets() public view returns (Ticket[] memory) {
+    function getOwnedTickets(address owner) public view returns (Ticket[] memory) {
 
         uint count = 0;
         for (uint i = 1; i <= numOfTickets; i++) {
-            if (ownerOf(i) == msg.sender) {
+            if (ownerOf(i) == owner) {
                 count++;
             }
         }
@@ -122,7 +122,7 @@ contract Ticket is ERC721 {
         Ticket[] memory ownedTickets = new Ticket[](count);
         uint index = 0;
         for (uint i = 1; i <= numOfTickets; i++) {
-            if (ownerOf(i) == msg.sender) {
+            if (ownerOf(i) == owner) {
                 ownedTickets[index] = tickets[i];
                 index++;
             }

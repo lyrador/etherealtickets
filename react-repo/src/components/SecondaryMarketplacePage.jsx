@@ -62,12 +62,12 @@ function SecondaryMarketplacePage() {
                 console.log(cellValue.row.buyButton);
                 navigate('/checkout', {
                   state: {
-                    rowId: cellValue.row.id,
-                    concertId: cellValue.row.conertId,
+                    ticketId: cellValue.row.id,
+                    concertId: cellValue.row.concertId,
                     concertName: cellValue.row.concertName,
                     concertLoc: cellValue.row.concertLoc,
                     category: cellValue.row.category,
-                    ticketCost: cellValue.row.ticketCost,
+                    ticketCost: parseInt(cellValue.row.ticketCost),
                     concertDate: cellValue.row.concertDate
                   }
                 });
@@ -93,10 +93,11 @@ function SecondaryMarketplacePage() {
       return {
         id: parseInt(ticket.ticketId),
         concertName: ticket.concertName,
+        concertId: parseInt(ticket.concertId),
         concertLoc: ticket.concertLocation,
         category: parseInt(ticket.category),
         ticketCost: parseInt(ticket.cost),
-        concertDate: ticket.concertDate,
+        concertDate: parseInt(ticket.concertDate),
         listedBy: ticket.listedBy,
         buyButton: 1
       };

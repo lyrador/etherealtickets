@@ -175,7 +175,7 @@ describe("Ticket", function () {
         value: ONE_ETH * 6n,
       });
 
-    const addr1Tickets = await ticketContract.connect(addr1).getOwnedTickets();
+    const addr1Tickets = await ticketContract.connect(addr1).getOwnedTickets(addr1);
     expect(addr1Tickets.length).to.equal(2);
   });
 });

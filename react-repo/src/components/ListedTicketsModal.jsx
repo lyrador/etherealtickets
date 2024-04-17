@@ -3,23 +3,27 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
-import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DataGrid } from '@mui/x-data-grid';
+
 import { ethers } from "ethers";
+
 import { CONCERT, TICKET, MARKETPLACE, SECONDARY_MARKETPLACE } from "../constants/Address";
+import Ticket from "../contracts/Ticket.json";
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
 const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
+const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
 
 const style = {
     position: 'absolute',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 400,
+    width: '85%',
+    height: '70%',
     bgcolor: 'background.paper',
     border: '2px solid #000',
     boxShadow: 24,
@@ -30,11 +34,11 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
 
     const columns = [
         { field: 'id', headerName: 'ID', flex: 1 },
+        { field: 'concertId', headerName: 'Concert Id', flex: 1 },
         { field: 'concertName', headerName: 'Concert Name', flex: 1 },
         { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
         { field: 'category', headerName: 'Category', width: 130 },
         { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
-        { field: 'listedBy', headerName: 'Listed By', flex: 1 },
         {
             field: 'concertDate',
             headerName: 'Concert Date',
@@ -44,10 +48,21 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
         {
             field: 'listButton', headerName: '', width: 150, disableClickEventBubbling: true,
             renderCell: (cellValue) => {
+                const listedBool = cellValue.row.isListed;
+                console.log("ListedBool");
+                console.log(listedBool);
                 return (
                     <>
-                        <Button
-                            variant="contained"
+                        {listedBool ? (<Button variant="contained"
+                            onClick={() => {
+                                console.log(cellValue.row.id);
+                                unlistTicketWithId(cellValue.row.id);
+                            }
+                            }
+                        >
+                            Unlist
+                        </Button>
+                        ) : (<Button variant="contained"
                             onClick={() => {
                                 console.log(cellValue.row.id);
                                 listTicketWithId(cellValue.row.id);
@@ -56,6 +71,9 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
                         >
                             List
                         </Button>
+
+                        )
+                        }
                     </>
                 );
             }
@@ -72,29 +90,35 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
         const result = await secondaryMarketplaceContract.unlistTicket(ticketId, "S1234567A");
     };
 
-    const fetchSecondaryMarketplaceListingsData = async () => {
-        const rawListedTicketDetailsArr = await secondaryMarketplaceContract.getAllListedTicketDetailsArray();
+    const fetchOwnedTicketsInSecondarySaleStageData = async () => {
+        const rawOwnedTicketDetailsArr = await secondaryMarketplaceContract.getOwnedTicketDetailsArray();
 
-        console.log("OJSFOJFS");
-        const listedTicketDetailsArr = rawListedTicketDetailsArr.map((ticket) => {
+        console.log("fetchOwnedTicketsData");
+        const ownedTicketDetailsArr = rawOwnedTicketDetailsArr.map((ticket) => {
             console.log(parseInt(ticket.ticketId));
             return {
                 id: parseInt(ticket.ticketId),
+                concertId: parseInt(ticket.concertId),
                 concertName: ticket.concertName,
                 concertLoc: ticket.concertLocation,
                 category: parseInt(ticket.category),
                 ticketCost: parseInt(ticket.cost),
-                concertDate: ticket.concertDate,
-                listedBy: ticket.listedBy,
+                concertDate: parseInt(ticket.concertDate),
+                isListed: ticket.isListed,
+                isSecondarySaleStage: ticket.isSecondarySaleStage,
                 buyButton: 1
             };
         });
 
-        setTableRows(listedTicketDetailsArr);
+        console.log(ownedTicketDetailsArr);
+
+        const ownedTicketDetailsSecondaryStageArr = ownedTicketDetailsArr.filter((ticket) => ticket.isSecondarySaleStage == true);
+
+        setTableRows(ownedTicketDetailsSecondaryStageArr);
     };
 
     useEffect(() => {
-        fetchSecondaryMarketplaceListingsData();
+        fetchOwnedTicketsInSecondarySaleStageData();
     }, []);
 
     return (
@@ -108,10 +132,10 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
             >
                 <Box sx={style}>
                     <Typography id="modal-modal-title" variant="h6" component="h2">
-                        Text in a modal
+                        My Tickets
                     </Typography>
                     <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                        Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+                        These are my tickets...
                     </Typography>
                     <DataGrid
                         rows={tableRows}
@@ -122,6 +146,7 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
                             },
                         }}
                         pageSizeOptions={[5, 10]}
+                        style={{ height: '80%' }}
                     />
                 </Box>
             </Modal>

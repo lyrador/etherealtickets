@@ -28,6 +28,19 @@ contract SecondaryMarketplace {
         address listedBy;
     }
 
+    struct OwnedTicket {
+        uint256 ticketId;
+        uint256 concertId;
+        uint24 category;
+        uint256 cost; 
+        string passportId; 
+        string concertName;
+        string concertLocation;
+        uint concertDate;
+        bool isListed;
+        bool isSecondarySaleStage;
+    }
+
     uint256[] allListedTicketIds;
 
     Ticket ticketContract;
@@ -35,6 +48,8 @@ contract SecondaryMarketplace {
     Marketplace primaryMarketContract;
     uint256 buyingCommission;
     uint256 sellingCommission;
+
+    event ResaleTicketBought(uint256 indexed ticketId, uint256 indexed concertId, address seller, address buyer);
 
     constructor(Concert concertContractAddr, Ticket ticketContractAddr, Marketplace primaryMarketContractAddr) public {
         // only admin can deploy this contract
@@ -69,7 +84,6 @@ contract SecondaryMarketplace {
         require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
         require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
-
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
         allListedTicketIds.push(ticketId);
     }
@@ -100,6 +114,8 @@ contract SecondaryMarketplace {
         //ticketContract.updateTicketOwner(ticketId, msg.sender);
 
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
+        removeElement(allListedTicketIds, ticketId);
+        emit ResaleTicketBought(ticketId, concertId, ticketOwner, msg.sender);
     }
 
     // //if implementing this, we need to change the uint256[] listedTicketIds to 2d array where row is cat num and col is ticketId
@@ -175,5 +191,46 @@ contract SecondaryMarketplace {
             ticketDetailsArr[i] = newSecondaryMarketTicket;
         }
         return ticketDetailsArr;
+    }
+
+    function getOwnedTicketDetailsArray() public view returns (OwnedTicket[] memory) {
+        // for loop size
+        Ticket.Ticket[] memory ownedTickets = ticketContract.getOwnedTickets(msg.sender);
+        OwnedTicket[] memory ticketDetailsArr = new OwnedTicket[](ownedTickets.length);
+        for (uint256 i = 0; i < ownedTickets.length; i++) {
+            Ticket.Ticket memory ticket = ownedTickets[i];
+            Concert.Concert memory concert = concertContract.getConcertDetailsFromConcertId(ticket.concertId);
+            uint256 ticketId = ticket.ticketId;
+            uint256 concertId = ticket.concertId;
+            uint24 category = ticket.category;
+            uint256 cost = ticket.cost; 
+            string memory passportId = ticket.passportId; 
+            string memory concertName = concert.name;
+            string memory concertLocation = concert.location;
+            uint concertDate = concert.concertDate;
+            bool isListed = isTicketIdListed(ticketId);
+            bool isSecondarySaleStage = (concert.stage == Concert.Stage(2));
+            OwnedTicket memory newOwnedTicket = OwnedTicket(ticketId, concertId, category, cost, passportId, concertName, concertLocation, concertDate, isListed, isSecondarySaleStage);
+            ticketDetailsArr[i] = newOwnedTicket;
+        }
+        return ticketDetailsArr;
+    }
+
+    function getBuyingCommission() public view returns (uint256) {
+        return buyingCommission;
+    }
+
+    function getSellingCommission() public view returns (uint256) {
+        return sellingCommission;
+    }
+
+    function isTicketIdListed(uint256 ticketId) internal view returns (bool) {
+        for (uint i = 0; i < allListedTicketIds.length; i++) {
+            if (allListedTicketIds[i] == ticketId) {
+                return true;
+                break; 
+            }
+        }
+        return false;
     }
 }
