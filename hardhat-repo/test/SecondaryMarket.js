@@ -350,7 +350,7 @@ describe("SecondaryMarketplace", function () {
             const ticketCost = ONE_ETH;
     
             // Case where buy transaction is successful
-            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: TWO_ETH});
     
             const approvalTxReceipt = await approvalTx.wait();
@@ -393,7 +393,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
     
             // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
-            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             let buy = secondaryMarketContract.connect(addr2).buyTicket(1,1,{value: ONE_ETH});
     
             await expect(buy).to.be.revertedWith(
@@ -411,7 +411,7 @@ describe("SecondaryMarketplace", function () {
             } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
 
             // Verify that cannot buy ticket on secondary marketplace if stage not SECONDARY_SALE
-            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
                 secondaryMarketContract.connect(addr2).buyTicket(1, 1)
             ).to.be.revertedWith("Marketplace not open");
@@ -437,7 +437,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
     
             // Verify that cannot buy ticket if ticketId not valid
-            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
                 secondaryMarketContract.connect(addr2).buyTicket(9999, 1)
             ).to.be.revertedWithCustomError(ticketContract, "ERC721NonexistentToken");
@@ -462,7 +462,7 @@ describe("SecondaryMarketplace", function () {
             await secondaryMarketContract.connect(addr1).listTicket(1, "S1234567A");
             
             // Verify that cannot buy ticket if owner is buying his/her own listed ticket
-            let approvalTx = await ticketContract.connect(addr1).approve(secondaryMarketContract, 1);
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
                 secondaryMarketContract.connect(addr1).buyTicket(1, 1)
             ).to.be.revertedWith("Owner cannot buy own listed ticket");

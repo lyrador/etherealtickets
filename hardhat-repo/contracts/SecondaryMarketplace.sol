@@ -96,7 +96,6 @@ contract SecondaryMarketplace {
         // Buyer transfers ticket to seller, now that organiser received buyer money, organiser transfer eth to seller
         address ticketOwner = ticketContract.ownerOf(ticketId);
         payable(ticketOwner).transfer(ticketPrice - sellingCommission);
-        //primaryMarketContract.approve(address(this), ticketId);
         ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
         //ticketContract.updateTicketOwner(ticketId, msg.sender);
 

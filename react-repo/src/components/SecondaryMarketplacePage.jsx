@@ -40,6 +40,7 @@ function SecondaryMarketplacePage() {
   const columns = [
     { field: 'id', headerName: 'ID', flex: 1 },
     { field: 'concertName', headerName: 'Concert Name', flex: 1 },
+    { field: 'concertId', headerName: 'Concert Id', flex: 1 },
     { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
     { field: 'category', headerName: 'Category', width: 130 },
     { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
@@ -62,6 +63,7 @@ function SecondaryMarketplacePage() {
                 navigate('/checkout', {
                   state: {
                     rowId: cellValue.row.id,
+                    concertId: cellValue.row.conertId,
                     concertName: cellValue.row.concertName,
                     concertLoc: cellValue.row.concertLoc,
                     category: cellValue.row.category,
@@ -171,8 +173,7 @@ function SecondaryMarketplacePage() {
         >
           Show My Listed Tickets
         </Button>
-        <Button
-          variant="contained"
+        <Button variant="contained"
           onClick={() => {
             console.log("List My Ticket");
             unlistTicketWithId(1);
@@ -194,7 +195,7 @@ function SecondaryMarketplacePage() {
           filterModel={filterModel}
           onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
         />
-        <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose} content={content}/>
+        <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose} content={content} />
       </div>
     </>
   );

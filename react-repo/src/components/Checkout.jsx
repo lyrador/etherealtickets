@@ -1,8 +1,6 @@
 import React from "react";
 import NavBar from "./NavBar";
 import Header from "./Header";
-import { DataGrid } from '@mui/x-data-grid';
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import PurchaseAlertDialog from "./PurchaseAlertDialog";
 import { useLocation } from "react-router-dom";
@@ -16,13 +14,26 @@ import bruno from '../images/bruno.jpg';
 
 import { ethers } from 'ethers';
 
+import Concert from "../contracts/Concert.json";
+import Ticket from "../contracts/Ticket.json";
+import Marketplace from "../contracts/Marketplace.json";
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
+import { CONCERT, TICKET, MARKETPLACE, SECONDARY_MARKETPLACE } from "../constants/Address";
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
+const concertContract = new ethers.Contract(CONCERT, Concert.abi, signer);
+const marketplaceContract = new ethers.Contract(MARKETPLACE, Marketplace.abi, signer);
+const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
+
 const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
 function Checkout() {
     const navigate = useNavigate();
     const [open, setOpen] = React.useState(false);
     const { state } = useLocation();
-    const { rowId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
+    const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
 
     const [balance, setBalance] = useState('0');
 
@@ -52,6 +63,18 @@ function Checkout() {
         }
     };
 
+    // Function to purchase
+    const purchase = async () => {
+        try {
+            let totalCostInWei = ethers.constants.Zero;
+            totalCostInWei.add(ticketCost);
+            await secondaryMarketplaceContract.buyTicket(ticketId, concertId, { value: totalCostInWei });
+            console.log("Success");
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
     useEffect(() => {
         requestAccount();
     }, []);
@@ -63,41 +86,6 @@ function Checkout() {
     const handleClose = () => {
         setOpen(false);
     };
-
-    const columns = [
-        { field: 'id', headerName: 'ID', flex: 1 },
-        { field: 'concertName', headerName: 'Concert Name', flex: 1 },
-        { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
-        { field: 'category', headerName: 'Category', width: 130 },
-        { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
-        { field: 'listedBy', headerName: 'Listed By', flex: 1 },
-        {
-            field: 'concertDate',
-            headerName: 'Concert Date',
-            type: 'string',
-            flex: 1,
-        },
-        {
-            field: 'buyButton', headerName: '', width: 150, disableClickEventBubbling: true,
-            renderCell: (cellValue) => {
-                return (
-                    <>
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                console.log(cellValue.row.buyButton);
-                                handleClickOpen();
-                            }
-                            }
-                        >
-                            Buy
-                        </Button>
-                        <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
-                    </>
-                );
-            }
-        },
-    ];
 
     // Assuming you have a data structure for the financials like this:
     const financials = {
@@ -116,10 +104,10 @@ function Checkout() {
     return (
         <>
             <Header />
-            <h2>Checkout with rowId : {rowId}</h2>
+            <h2>Checkout with ticketId : {ticketId}</h2>
             <h3>{balance}</h3>
-            <TicketPurchaseCard 
-                cardImg={swift} 
+            <TicketPurchaseCard
+                cardImg={swift}
                 concertName={concertName}
                 concertLoc={concertLoc}
                 category={category}
@@ -131,10 +119,7 @@ function Checkout() {
             </div>
             <Button variant="contained" color="error" onClick={() => navigate(-1)}>Cancel checkout and return</Button>
             <>
-                <Button
-                    variant="contained"
-                    onClick={() => setOpen(true)}
-                >
+                <Button variant="contained" onClick={() => purchase()}>
                     Proceed
                 </Button>
                 <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
