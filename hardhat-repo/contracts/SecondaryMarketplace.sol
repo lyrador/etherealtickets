@@ -102,7 +102,7 @@ contract SecondaryMarketplace {
         removeElement(allListedTicketIds, ticketId);
     }
 
-    function buyTicket(uint256 ticketId) public payable secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
+    function buyTicket(uint256 ticketId, string memory passportId) public payable secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
         require(ticketContract.ownerOf(ticketId) != msg.sender, "Owner cannot buy own listed ticket");
 
         uint256 ticketPrice = ticketContract.getTicketCost(ticketId);
@@ -114,7 +114,7 @@ contract SecondaryMarketplace {
         address ticketOwner = ticketContract.ownerOf(ticketId);
         payable(ticketOwner).transfer(ticketPrice - sellingCommission);
         ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
-        //ticketContract.updateTicketOwner(ticketId, msg.sender);
+        ticketContract.updateTicketPassportId(ticketId, passportId);
 
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);

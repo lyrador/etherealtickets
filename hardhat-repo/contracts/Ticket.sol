@@ -131,4 +131,11 @@ contract Ticket is ERC721 {
         return ownedTickets;
 
     }
+
+    // Upon secondaryMarket buy ticket, update passportId
+    // TO RMB: find a way to fix accessRight to only secondaryMarketplaceAddress can call, think can put secondaryMarketplace address in ticket struct
+    function updateTicketPassportId(uint256 ticketId, string memory passportId) public {
+        require(isValidTicket(ticketId));
+        tickets[ticketId].passportId = passportId;
+    }
 }

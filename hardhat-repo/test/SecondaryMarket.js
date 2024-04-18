@@ -353,7 +353,7 @@ describe("SecondaryMarketplace", function () {
     
             // Case where buy transaction is successful
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
-            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, {value: TWO_ETH});
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
     
             const approvalTxReceipt = await approvalTx.wait();
             const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
@@ -396,7 +396,7 @@ describe("SecondaryMarketplace", function () {
     
             // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
-            let buy = secondaryMarketContract.connect(addr2).buyTicket(1, {value: ONE_ETH});
+            let buy = secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: ONE_ETH});
     
             await expect(buy).to.be.revertedWith(
                 "Insufficient amount to buy"
@@ -415,7 +415,7 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket on secondary marketplace if stage not SECONDARY_SALE
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr2).buyTicket(1)
+                secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z")
             ).to.be.revertedWith("Marketplace not open");
         });
 
@@ -441,7 +441,7 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket if ticketId not valid
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr2).buyTicket(9999)
+                secondaryMarketContract.connect(addr2).buyTicket(9999, "S1122334Z")
             ).to.be.revertedWithCustomError(ticketContract, "ERC721NonexistentToken");
         });
 
@@ -466,7 +466,7 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket if owner is buying his/her own listed ticket
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr1).buyTicket(1)
+                secondaryMarketContract.connect(addr1).buyTicket(1, "S1122334Z")
             ).to.be.revertedWith("Owner cannot buy own listed ticket");
         });
     });
