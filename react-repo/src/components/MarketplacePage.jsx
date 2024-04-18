@@ -13,7 +13,7 @@ import Button from "react-bootstrap/esm/Button";
 import { useNavigate } from "react-router-dom";
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
 
-import { TextField } from "@mui/material";
+import { TextField, CircularProgress, Backdrop } from "@mui/material";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
@@ -29,6 +29,10 @@ function MarketplacePage() {
   const [tableRows, setTableRows] = useState([]);
   const [isOwner, setIsOwner] = useState(false);
   const navigate = useNavigate();
+
+  const [openBackdrop, setOpenBackdrop] = React.useState(false);
+  const handleOpenBackdrop = () => setOpenBackdrop(true);
+  const handleCloseBackdrop = () => setOpenBackdrop(false);
 
   const fetchMarketplaceData = async () => {
     const primarySaleConcerts = await concertContract.getConcertsByStage(1);
@@ -53,17 +57,19 @@ function MarketplacePage() {
     try {
       const concertNum = parseInt(concertToAdvance);
       await concertContract.updateConcertStage(concertNum);
-      const updatedStage = await concertContract.getConcertStage(concertNum);
-      console.log(updatedStage);
-      if (updatedStage == 2) {
+      if (concertNum == 1) {
         await secondaryMarketplaceContract.createSecondaryMarketplace(concertNum);
       }
+      handleOpenBackdrop();
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 15000);
       console.log(`Moved Concert ${concertToAdvance} to Next Stage`);
     } catch (err) {
       console.log(err);
     }
   }
-  
+
   const getAccountOnLoad = async () => {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
@@ -149,6 +155,10 @@ function MarketplacePage() {
         </Button>
       </>
       }
+      <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
+        <CircularProgress color="inherit" />
+        &nbsp; &nbsp; Wait a moment...
+      </Backdrop>
     </>
   );
 }
