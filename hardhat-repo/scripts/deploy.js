@@ -180,6 +180,7 @@ async function main() {
   await concert.updateConcertStage(5); //update to primary_sale
   await marketplace.connect(addr1).joinQueue(5);
   await marketplace.connect(addr1).buyTicket(5, [1], ["S1234567A"], {value: standardisedTicketCost});
+  await ticket.connect(addr1).setApprovalForAll(secondaryMarketPlace, true);
   await concert.updateConcertStage(5); //update to secondary_sale
   await secondaryMarketPlace.createSecondaryMarketplace(5);
   //await concert.updateConcertStage(5);

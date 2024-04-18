@@ -1,8 +1,5 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Modal from '@mui/material/Modal';
+import { Box, Button, Typography, Modal, CircularProgress, Backdrop } from '@mui/material';
 import { useState, useEffect } from "react";
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -30,7 +27,7 @@ const style = {
     p: 4,
 };
 
-export default function BasicModal({ open, handleOpen, handleClose, content }) {
+export default function BasicModal({ open, handleOpen, handleClose, handleOpenBackdrop }) {
 
     const columns = [
         { field: 'id', headerName: 'ID', flex: 1 },
@@ -83,11 +80,33 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
     const [tableRows, setTableRows] = useState([]);
 
     const listTicketWithId = async (ticketId) => {
-        const result = await secondaryMarketplaceContract.listTicket(ticketId, "S1234567A");
+        try {
+            console.log("List ticket: ")
+            const result = await secondaryMarketplaceContract.listTicket(ticketId);
+            console.log("Success");
+            console.log("Reloading");
+            handleOpenBackdrop();
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 16000);
+        } catch (err) {
+            console.log(err);
+        }
     };
 
     const unlistTicketWithId = async (ticketId) => {
-        const result = await secondaryMarketplaceContract.unlistTicket(ticketId, "S1234567A");
+        try {
+            console.log("Unlist ticket: ")
+            const result = await secondaryMarketplaceContract.unlistTicket(ticketId);
+            console.log("Success");
+            console.log("Reloading");
+            handleOpenBackdrop();
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 16000);
+        } catch (err) {
+            console.log(err);
+        }
     };
 
     const fetchOwnedTicketsInSecondarySaleStageData = async () => {
@@ -123,7 +142,6 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
 
     return (
         <div>
-            <Button onClick={handleOpen}>Open modal</Button>
             <Modal
                 open={open}
                 onClose={handleClose}
@@ -135,7 +153,7 @@ export default function BasicModal({ open, handleOpen, handleClose, content }) {
                         My Tickets
                     </Typography>
                     <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                        These are my tickets...
+                        These are my tickets available for listing or unlisting on secondary marketplace...
                     </Typography>
                     <DataGrid
                         rows={tableRows}

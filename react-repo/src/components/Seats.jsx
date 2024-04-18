@@ -4,7 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import Concert from "../contracts/Concert.json";
 import Marketplace from "../contracts/Marketplace.json";
-import { CONCERT, MARKETPLACE, ORGANIZER } from "../constants/Address";
+import Ticket from "../contracts/Ticket.json";
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
+import { CONCERT, MARKETPLACE, ORGANIZER, TICKET, SECONDARY_MARKETPLACE } from "../constants/Address";
 import { CATEGORY_COLOR } from "../constants/Enum";
 
 import Button from "react-bootstrap/esm/Button";
@@ -18,6 +20,8 @@ const marketplaceContract = new ethers.Contract(
   Marketplace.abi,
   signer
 );
+const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
+const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 const SEATS_PER_ROW = 10;
 
@@ -125,6 +129,7 @@ function Seats() {
       await marketplaceContract.buyTicket(concertId, seatNums, passportIds, {
         value: amtToPay,
       });
+      await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
       navigate("/marketplace");
     } catch (err) {
       console.log(err);

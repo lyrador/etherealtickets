@@ -7,7 +7,7 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 
 export default function TicketPurchaseCard({cardImg, concertName, concertLoc, category, ticketCost, concertDate}) {
-    const theme = useTheme();
+    console.log(concertName);
 
     return (
         <Card sx={{ display: 'flex' }}>
@@ -28,7 +28,7 @@ export default function TicketPurchaseCard({cardImg, concertName, concertLoc, ca
                         Category: {category}
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary" component="div">
-                        Ticket Cost: {ticketCost} ETH
+                        Ticket Cost: {ticketCost} wei
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary" component="div">
                         Concert Date: {concertDate}

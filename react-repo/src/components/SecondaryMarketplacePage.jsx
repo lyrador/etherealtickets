@@ -1,41 +1,45 @@
 import React from "react";
-import NavBar from "./NavBar";
-import Header from "./Header";
-import { DataGrid } from '@mui/x-data-grid';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import PurchaseAlertDialog from "./PurchaseAlertDialog";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import InputAdornment from '@mui/material/InputAdornment';
-import SearchIcon from '@mui/icons-material/Search';
-import { TextField } from "@mui/material";
-import { useState } from "react";
-import { useEffect } from "react";
-
-import { ethers } from "ethers";
-import Concert from "../contracts/Concert.json";
-import Ticket from "../contracts/Ticket.json";
-import Marketplace from "../contracts/Marketplace.json";
-import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
-import { CONCERT, TICKET, MARKETPLACE, SECONDARY_MARKETPLACE } from "../constants/Address";
+import NavBar from "./NavBar";
+import Header from "./Header";
 import ListedTicketsModal from "./ListedTicketsModal";
 
-const content = "Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.";
+import { DataGrid } from '@mui/x-data-grid';
+import { Button, InputAdornment, TextField, CircularProgress, Backdrop } from '@mui/material';
+import PurchaseAlertDialog from "./PurchaseAlertDialog";
+
+import SearchIcon from '@mui/icons-material/Search';
+
+import { ethers } from "ethers";
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
+import { SECONDARY_MARKETPLACE } from "../constants/Address";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
-const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
-const concertContract = new ethers.Contract(CONCERT, Concert.abi, signer);
-const marketplaceContract = new ethers.Contract(MARKETPLACE, Marketplace.abi, signer);
 const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 function SecondaryMarketplacePage() {
   const navigate = useNavigate();
 
+  const [currAccount, setCurrAccount] = React.useState('');
+
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const [openBackdrop, setOpenBackdrop] = React.useState(false);
+  const handleOpenBackdrop = () => setOpenBackdrop(true);
+  const handleCloseBackdrop = () => setOpenBackdrop(false);
+
+  const [filterModel, setFilterModel] = React.useState({
+    items: [
+      { field: 'concertName', operator: 'contains', value: "" },
+    ],
+  });
+
+  const [tableRows, setTableRows] = useState([]);
 
   const columns = [
     { field: 'id', headerName: 'ID', flex: 1 },
@@ -45,18 +49,16 @@ function SecondaryMarketplacePage() {
     { field: 'category', headerName: 'Category', width: 130 },
     { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
     { field: 'listedBy', headerName: 'Listed By', flex: 1 },
-    {
-      field: 'concertDate',
-      headerName: 'Concert Date',
-      type: 'string',
-      flex: 1,
-    },
+    { field: 'concertDate', headerName: 'Concert Date', type: 'string', flex: 1 },
     {
       field: 'buyButton', headerName: '', width: 150, disableClickEventBubbling: true,
       renderCell: (cellValue) => {
+        let cellListedByString = cellValue.row.listedBy.toString().toUpperCase();
+        let currAccountString = currAccount.toString().toUpperCase();
+        const isNotListedByMe = (cellListedByString != currAccountString);
         return (
           <>
-            <Button
+            {isNotListedByMe && (<Button
               variant="contained"
               onClick={() => {
                 console.log(cellValue.row.buyButton);
@@ -76,18 +78,27 @@ function SecondaryMarketplacePage() {
             >
               Buy
             </Button>
+            )
+            }
           </>
         );
       }
     },
   ];
 
-  const [tableRows, setTableRows] = useState([]);
-
   const fetchSecondaryMarketplaceListingsData = async () => {
     const rawListedTicketDetailsArr = await secondaryMarketplaceContract.getAllListedTicketDetailsArray();
-
-    console.log("OJSFOJFS");
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setCurrAccount(accounts[0]);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      console.log('MetaMask is not installed');
+    }
+    console.log("getAllListedTicketDetailsArray");
     const listedTicketDetailsArr = rawListedTicketDetailsArr.map((ticket) => {
       console.log(parseInt(ticket.ticketId));
       return {
@@ -106,39 +117,13 @@ function SecondaryMarketplacePage() {
     setTableRows(listedTicketDetailsArr);
   };
 
-  const listTicketWithId = async (ticketId) => {
-    try {
-      console.log("List ticket: ")
-      const result = await secondaryMarketplaceContract.listTicket(ticketId);
-      console.log("Success");
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const unlistTicketWithId = async (ticketId) => {
-    try {
-      console.log("Unlist ticket: ")
-      const result = await secondaryMarketplaceContract.unlistTicket(ticketId);
-      console.log("Success");
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   useEffect(() => {
     fetchSecondaryMarketplaceListingsData();
   }, []);
 
-  const [filterModel, setFilterModel] = React.useState({
-    items: [
-      {
-        field: 'concertName',
-        operator: 'contains',
-        value: "",
-      },
-    ],
-  });
+  window.ethereum.on('accountsChanged', function (accounts) {
+    window.location.reload(true);
+  })
 
   return (
     <>
@@ -166,35 +151,11 @@ function SecondaryMarketplacePage() {
           })}
           style={{ width: 500, margin: 10 }}
         />
-        <Button
-          variant="contained"
-          onClick={() => {
-            console.log("List My Ticket");
-            listTicketWithId(1);
-          }
-          }
-        >
-          List my Ticket
+        <Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
+          List / Unlist My Tickets
         </Button>
-        <Button
-          variant="contained"
-          onClick={() => {
-            console.log("Show My Listed Tickets");
-            setOpen(true);
-          }
-          }
-        >
-          Show My Listed Tickets
-        </Button>
-        <Button variant="contained"
-          onClick={() => {
-            console.log("List My Ticket");
-            unlistTicketWithId(1);
-          }
-          }
-        >
-          Unlist ticket id 1
-        </Button>
+        <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose}
+          handleOpenBackdrop={handleOpenBackdrop} />
         <DataGrid
           rows={tableRows}
           columns={columns}
@@ -208,7 +169,10 @@ function SecondaryMarketplacePage() {
           filterModel={filterModel}
           onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
         />
-        <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose} content={content} />
+        <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
+          <CircularProgress color="inherit" />
+          &nbsp; &nbsp; Wait a moment...
+        </Backdrop>
       </div>
     </>
   );

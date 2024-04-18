@@ -1,41 +1,48 @@
 import React from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import NavBar from "./NavBar";
 import Header from "./Header";
-import Button from '@mui/material/Button';
 import PurchaseAlertDialog from "./PurchaseAlertDialog";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import TicketPurchaseCard from "./TicketPurchaseCard";
 import FinancialTable from './FinancialTable';
-import { useState, useEffect } from "react";
+
+import { Button, Backdrop, CircularProgress } from '@mui/material';
 
 import swift from '../images/swift-eras.jpg';
 import bruno from '../images/bruno.jpg';
+import edsheeran from '../images/edsheeran.jpg';
+import concertpic from '../images/concertOne.jpg'
 
-import { ethers, BigNumber } from "ethers";
+import { ethers } from "ethers";
 
-import Concert from "../contracts/Concert.json";
-import Ticket from "../contracts/Ticket.json";
-import Marketplace from "../contracts/Marketplace.json";
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
-import { CONCERT, TICKET, MARKETPLACE, SECONDARY_MARKETPLACE } from "../constants/Address";
+import { SECONDARY_MARKETPLACE } from "../constants/Address";
+
+const oneEth = 1000000000000000000;
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
-const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
-const concertContract = new ethers.Contract(CONCERT, Concert.abi, signer);
-const marketplaceContract = new ethers.Contract(MARKETPLACE, Marketplace.abi, signer);
 const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
 function Checkout() {
     const navigate = useNavigate();
-    const [open, setOpen] = React.useState(false);
     const { state } = useLocation();
     const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
 
+    const [open, setOpen] = React.useState(false);
+    const handleClickOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    const [openBackdrop, setOpenBackdrop] = React.useState(false);
+    const handleOpenBackdrop = () => setOpenBackdrop(true);
+    const handleCloseBackdrop = () => setOpenBackdrop(false);
+
     const [balance, setBalance] = useState('0');
+    const [buyingCommission, setBuyingComission] = useState(0);
 
     // Function to get the balance of the current account
     const getBalance = async (provider, account) => {
@@ -63,15 +70,6 @@ function Checkout() {
         }
     };
 
-    const getTotalCost = () => {
-        let totalCostInWei = ethers.constants.Zero;
-      
-        const seatCostInWei = ethers.utils.parseEther(ticketCost.toString());
-        totalCostInWei = totalCostInWei.add(seatCostInWei);
-      
-        return totalCostInWei;
-      };
-
     // Function to purchase
     const purchase = async () => {
         try {
@@ -79,7 +77,6 @@ function Checkout() {
             console.log(ticketCost);
 
             console.log("Buying Commission: ")
-            const buyingCommission = await secondaryMarketplaceContract.getBuyingCommission();
             console.log(buyingCommission);
 
             console.log("Total Cost: ")
@@ -96,45 +93,64 @@ function Checkout() {
                 value: totalCostInWei,
             });
             console.log("Success");
-            navigate(-1);
+
+            // add timeout and refresh
+            console.log("Reloading");
+            handleOpenBackdrop();
+            setTimeout(() => {
+                navigate(-1);
+            }, 16000);
         } catch (err) {
             console.log(err);
         }
     };
+    
+    const setBuyingComissionFunc = async () => {
+        try {
+            console.log("Buying Commission: ")
+            const buyingCommissionVal = await secondaryMarketplaceContract.getBuyingCommission();
+            setBuyingComission(buyingCommissionVal)
+            console.log(buyingCommissionVal);
+            console.log("Buying commission set successfully")
+        } catch (err) {
+            console.log(err);
+        }
+    }; 
 
     useEffect(() => {
+        if (concertName.includes("Sheeran")) {
+            setImage(edsheeran);
+        } else if (concertName.includes("Taylor")) {
+            setImage(swift);
+        } else if (concertName.includes("Bruno")) {
+            setImage(bruno);
+        } else {
+            setImage(concertpic);
+        }
+        setBuyingComissionFunc();
         requestAccount();
     }, []);
 
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
-
-    const handleClose = () => {
-        setOpen(false);
-    };
-
     // Assuming you have a data structure for the financials like this:
     const financials = {
-        balance: Number(balance),
-        ticketCost: 50,
-        numberOfTickets: 10,
-        commissionFee: 20,
+        balanceEth: Number(balance) ,
+        ticketCostWei: ticketCost,
+        numberOfTickets: 1,
+        commissionFeeWei: buyingCommission,
         currency: 'ETH'
     };
 
     // Perform calculations
-    financials.totalCostOfTickets = financials.ticketCost * financials.numberOfTickets;
-    financials.finalAmountToPay = financials.totalCostOfTickets - financials.commissionFee;
-    financials.finalBalance = financials.balance - financials.finalAmountToPay;
+    financials.totalCostOfTicketsWei = financials.ticketCostWei * financials.numberOfTickets;
+
+    const [image, setImage] = useState('');
 
     return (
         <>
             <Header />
-            <h2>Checkout with ticketId : {ticketId}</h2>
-            <h3>{balance}</h3>
+            <h2>Resale checkout with TicketID : {ticketId}</h2>
             <TicketPurchaseCard
-                cardImg={swift}
+                cardImg={image}
                 concertName={concertName}
                 concertLoc={concertLoc}
                 category={category}
@@ -151,6 +167,10 @@ function Checkout() {
                 </Button>
                 <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
             </>
+            <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
+          <CircularProgress color="inherit" />
+          &nbsp; &nbsp; Wait a moment...
+        </Backdrop>
         </>
     );
 }
