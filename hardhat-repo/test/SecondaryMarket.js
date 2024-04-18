@@ -111,7 +111,9 @@ describe("SecondaryMarketplace", function () {
             ).to.equal(stages.SECONDARY_SALE); 
     
             // Verify that secondary marketplace can be created successfully
-            await secondaryMarketContract.createSecondaryMarketplace(1);
+            await expect(secondaryMarketContract.createSecondaryMarketplace(1))
+                .to.emit(secondaryMarketContract, "SecondaryMarketplaceCreated")
+                .withArgs(1);
         });
         
         it("Should fail to create secondary market if secondary marketplace not open", async function () {

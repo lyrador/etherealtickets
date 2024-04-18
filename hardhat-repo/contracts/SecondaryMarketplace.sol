@@ -49,11 +49,12 @@ contract SecondaryMarketplace {
     uint256 buyingCommission;
     uint256 sellingCommission;
 
+    event SecondaryMarketplaceCreated(uint256 indexed concertId);
+    event TicketListed(uint256 indexed ticketId, uint256 indexed concertId, address lister);
+    event TicketUnListed(uint256 indexed ticketId, uint256 indexed concertId, address unlister);
     event ResaleTicketBought(uint256 indexed ticketId, uint256 indexed concertId, address seller, address buyer);
 
     constructor(Concert concertContractAddr, Ticket ticketContractAddr, Marketplace primaryMarketContractAddr) public {
-        // only admin can deploy this contract
-        //organizer = msg.sender;
         ticketContract = ticketContractAddr;
         concertContract = concertContractAddr;
         primaryMarketContract = primaryMarketContractAddr;
@@ -61,22 +62,9 @@ contract SecondaryMarketplace {
         sellingCommission = 500;
     }
 
-    // modifier onlyOrganizer() {
-    //     require(msg.sender == organizer, "Only the organizer can call this function");
-    //     _;
-    // }
-
     modifier secondaryMarketplaceValidAndOpen(uint256 concertId) {
         require(concertContract.isValidConcert(concertId), "Concert does not exist");
         require(concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Marketplace not open");
-        _;
-    }
-    
-    modifier isTicketOwner(uint256 ticketId) {
-        require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
-        Ticket.Ticket memory ticket = ticketContract.getTicketDetailsFromTicketId(ticketId);
-        require(concertContract.isValidConcert(ticket.concertId), "Concert does not exist");
-        require(concertContract.getConcertStage(ticket.concertId) == Concert.Stage.SECONDARY_SALE, "Marketplace not open");
         _;
     }
 
@@ -85,6 +73,7 @@ contract SecondaryMarketplace {
         uint256[] memory initialTickets;
         secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(msg.sender, initialTickets);
         secondaryMarketplaces[concertId] = newSecondaryMarketplace;
+        emit SecondaryMarketplaceCreated(concertId);
     }
 
     // reseller list ticket
@@ -93,6 +82,7 @@ contract SecondaryMarketplace {
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
         allListedTicketIds.push(ticketId);
+        emit TicketListed(ticketId, concertId, msg.sender);
     }
 
     function unlistTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
@@ -100,6 +90,7 @@ contract SecondaryMarketplace {
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
         removeElement(allListedTicketIds, ticketId);
+        emit TicketUnListed(ticketId, concertId, msg.sender);
     }
 
     function buyTicket(uint256 ticketId, string memory passportId) public payable secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
@@ -121,26 +112,6 @@ contract SecondaryMarketplace {
         removeElement(allListedTicketIds, ticketId);
         emit ResaleTicketBought(ticketId, concertId, ticketOwner, msg.sender);
     }
-
-    // //if implementing this, we need to change the uint256[] listedTicketIds to 2d array where row is cat num and col is ticketId
-    // function buyTicketForCategory(uint256 concertId, uint8 cat) public payable {
-    //     // Validate if buyer is at the front of the queue aka, require(msg.sender == peekFront());???
-    //     require(concertContract.isValidConcert(concertId), "Concert does not exist");
-    //     require(secondaryMarketplaces[concertId].state = marketplaceState.Open, "Secondary marketplace is closed");
-    //     uint256[] listedTicketIdsForCategory = listedTicketIds[cat];
-    //     require(listedTicketIdsForCategory.length > 0, "No tickets in selected category")
-        
-    //     uint256 ticketId = listedTicketIdsForCategory[listedTicketIdsForCategory.length-1];
-    //     uint256 ticketPrice = ticketContract.getPrice(ticketId);
-    //     require(msg.value >= ticketPrice, "Insufficient amount to buy");
-    //     uint256 excessWei = msg.value - (ticketPrice + buyingCommission);
-    //     payable(msg.sender).transfer(excessWei);
-
-    //     // Buyer transfers eth to organizer
-    //     address ticketOwner = ticketContract.getOwner(ticketId);
-    //     ticketContract.transferFrom(address(this), msg.sender, ticketId);
-    //     listedTicketIdsForCategory.pop();
-    // }
 
     //function to remove an array slightly more efficiently by swapping element with last
     function removeElement(uint256[] storage array, uint256 element) internal {
