@@ -13,6 +13,8 @@ import Button from "react-bootstrap/esm/Button";
 import { useNavigate } from "react-router-dom";
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
 
+import { TextField } from "@mui/material";
+
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
 const concertContract = new ethers.Contract(CONCERT, Concert.abi, signer);
@@ -47,10 +49,19 @@ function MarketplacePage() {
     setTableRows(transformedResult);
   };
 
-  const moveConcertId1ToNextStage = async () => {
-    const result = await concertContract.updateConcertStage(4);
-    await secondaryMarketplaceContract.createSecondaryMarketplace(4);
-    console.log("Move Concert Id 4 to Next Stage");
+  const moveConcertToNextStage = async () => {
+    try {
+      const concertNum = parseInt(concertToAdvance);
+      await concertContract.updateConcertStage(concertNum);
+      const updatedStage = await concertContract.getConcertStage(concertNum);
+      console.log(updatedStage);
+      if (updatedStage == 2) {
+        await secondaryMarketplaceContract.createSecondaryMarketplace(concertNum);
+      }
+      console.log(`Moved Concert ${concertToAdvance} to Next Stage`);
+    } catch (err) {
+      console.log(err);
+    }
   }
   
   const getAccountOnLoad = async () => {
@@ -85,6 +96,8 @@ function MarketplacePage() {
   const viewMarketplace = (id) => {
     navigate(`/marketplace/${id}`);
   };
+
+  const [concertToAdvance, setConcertToAdvance] = React.useState(0);
 
   return (
     <>
@@ -125,9 +138,17 @@ function MarketplacePage() {
           ))}
         </tbody>
       </Table>
-      <Button onClick={() => moveConcertId1ToNextStage()}>
-        Move ConcertID 1 to SECONDARY_SALE stage
-      </Button>
+      {isOwner && <>
+        <TextField
+          placeholder="ConcertID to Go Next Stage"
+          onChange={(e) => setConcertToAdvance(e.target.value)}
+          style={{ width: 250, margin: 10 }}
+        />
+        <Button onClick={() => moveConcertToNextStage()} style={{ margin: 20 }}>
+          Move to next stage
+        </Button>
+      </>
+      }
     </>
   );
 }

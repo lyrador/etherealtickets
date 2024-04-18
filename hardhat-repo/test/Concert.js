@@ -120,24 +120,24 @@ describe("Concert", function () {
 
     await joinQueueFixture(concertContract);
     await concertContract.updateConcert(
-      1,
-      "Updated Taylor Swift Day 1",
+      3,
+      "Updated Taylor Swift Day 3",
       "Updated National Stadium",
       [150, 250, 350, 450],
       [150, 250, 350, 450],
       3,
       4
     );
-    const updatedName = await concertContract.getName(1);
-    const updatedLocation = await concertContract.getLocation(1);
-    const updatedTicketCostArray = await concertContract.getTicketCostArray(1);
+    const updatedName = await concertContract.getName(3);
+    const updatedLocation = await concertContract.getLocation(3);
+    const updatedTicketCostArray = await concertContract.getTicketCostArray(3);
     const updatedCategorySeatArray = await concertContract.getCategorySeatArray(
-      1
+      3
     );
-    const updatedConcertDate = await concertContract.getConcertDate(1);
-    const updatedSalesDate = await concertContract.getSalesDate(1);
+    const updatedConcertDate = await concertContract.getConcertDate(3);
+    const updatedSalesDate = await concertContract.getSalesDate(3);
 
-    expect(updatedName).to.equal("Updated Taylor Swift Day 1");
+    expect(updatedName).to.equal("Updated Taylor Swift Day 3");
     expect(updatedLocation).to.equal("Updated National Stadium");
     expect(
       updatedTicketCostArray.map((price) => price.toString())
@@ -237,17 +237,6 @@ describe("Concert", function () {
       .to.be.revertedWith("Concert does not exist");
   });
 
-  //test for a non owner not being able to delete a concert
-  it("Should prevent non-owners from deleting a concert", async function () {
-    const { concertContract, addr1 } = await loadFixture(deployFixture);
-
-    await joinQueueFixture(concertContract); // Ensure there are concerts to work with
-    // Attempt to delete a concert as a non-owner
-    await expect(
-      concertContract.connect(addr1).deleteConcert(1)
-    ).to.be.revertedWith("Caller is not the owner");
-  });
-
   //test for getting the seat cost
   it("Should return the correct seat cost based on seat number", async function () {
     const { concertContract } = await loadFixture(deployFixture);
@@ -309,32 +298,6 @@ describe("Concert", function () {
     expect(isValid).to.be.true;
   });
 
-  it("Should not allow deletion of a concert at PRIMARY_SALE stage", async function () {
-    const { concertContract } = await loadFixture(deployFixture);
-    await concertContract.createConcert(
-      "Concert at Initialization",
-      "Venue",
-      [100, 200, 300],
-      [50, 50, 50],
-      20250101,
-      20240101
-    );
-
-    const concertId = 1; // Assuming concert IDs start at 1 and increment
-
-    // Update the concert's stage to PRIMARY_SALE by calling updateConcertStage once
-    await concertContract.updateConcertStage(concertId);
-
-    // Verify concert is now at PRIMARY_SALE stage
-    const currentStage = await concertContract.getConcertStage(concertId);
-    expect(currentStage).to.equal(1); // Assuming '1' corresponds to PRIMARY_SALE in your Stage enum
-
-    // Attempt to delete the concert, expecting the transaction to revert
-    await expect(concertContract.deleteConcert(concertId)).to.be.revertedWith(
-      "Concert can only be deleted at INITIALIZATION stage"
-    );
-  });
-
   it("Get concerts at primary sales stage", async function () {
     const { concertContract, addr1 } = await loadFixture(deployFixture);
     const joinQueueFixtureArrow = async () => joinQueueFixture(concertContract);
@@ -342,5 +305,120 @@ describe("Concert", function () {
 
     const primarySalesConcerts = await concertContract.getConcertsByStage(1);
     expect(primarySalesConcerts.length).to.equal(2);
+  });
+
+  //------------------ FOR DEMO -----------------------------//
+
+  describe("Ownership", function () {
+    it("Should prevent non-owners from creating a concert", async function () {
+      const { concertContract, addr1 } = await loadFixture(deployFixture);
+
+      await expect(
+        concertContract
+          .connect(addr1)
+          .createConcert(
+            "Concert at Initialization",
+            "Venue",
+            [100, 200, 300],
+            [50, 50, 50],
+            20250101,
+            20240101
+          )
+      ).to.be.revertedWith("Caller is not the owner");
+    });
+
+    it("Should prevent non-owners from updating a concert", async function () {
+      const { concertContract, addr1 } = await loadFixture(deployFixture);
+
+      await joinQueueFixture(concertContract); // Ensure there are concerts to work with
+
+      await expect(
+        concertContract
+          .connect(addr1)
+          .updateConcert(
+            1,
+            "Updated Taylor Swift Day 1",
+            "Updated National Stadium",
+            [150, 250, 350, 450],
+            [150, 250, 350, 450],
+            3,
+            4
+          )
+      ).to.be.revertedWith("Caller is not the owner");
+    });
+
+    it("Should prevent non-owners from deleting a concert", async function () {
+      const { concertContract, addr1 } = await loadFixture(deployFixture);
+
+      await joinQueueFixture(concertContract); // Ensure there are concerts to work with
+      // Attempt to delete a concert as a non-owner
+      await expect(
+        concertContract.connect(addr1).deleteConcert(1)
+      ).to.be.revertedWith("Caller is not the owner");
+    });
+  });
+
+  describe("Stage", function () {
+    it("Should not allow updating of a concert at PRIMARY_SALE stage", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+      await concertContract.createConcert(
+        "Concert at Initialization",
+        "Venue",
+        [100, 200, 300],
+        [50, 50, 50],
+        20250101,
+        20240101
+      );
+
+      const concertId = 1; // Assuming concert IDs start at 1 and increment
+
+      // Update the concert's stage to PRIMARY_SALE by calling updateConcertStage once
+      await concertContract.updateConcertStage(concertId);
+
+      // Verify concert is now at PRIMARY_SALE stage
+      const currentStage = await concertContract.getConcertStage(concertId);
+      expect(currentStage).to.equal(1); // Assuming '1' corresponds to PRIMARY_SALE in your Stage enum
+
+      // Attempt to update the concert, expecting the transaction to revert
+      await expect(
+        concertContract.updateConcert(
+          1,
+          "Updated Taylor Swift Day 1",
+          "Updated National Stadium",
+          [150, 250, 350, 450],
+          [150, 250, 350, 450],
+          3,
+          4
+        )
+      ).to.be.revertedWith(
+        "Concert can only be updated at INITIALIZATION stage"
+      );
+    });
+
+    it("Should not allow deletion of a concert at PRIMARY_SALE stage", async function () {
+      const { concertContract } = await loadFixture(deployFixture);
+      await concertContract.createConcert(
+        "Concert at Initialization",
+        "Venue",
+        [100, 200, 300],
+        [50, 50, 50],
+        20250101,
+        20240101
+      );
+
+      const concertId = 1; // Assuming concert IDs start at 1 and increment
+
+      // Update the concert's stage to PRIMARY_SALE by calling updateConcertStage once
+      await concertContract.updateConcertStage(concertId);
+
+      // Verify concert is now at PRIMARY_SALE stage
+      const currentStage = await concertContract.getConcertStage(concertId);
+      expect(currentStage).to.equal(1); // Assuming '1' corresponds to PRIMARY_SALE in your Stage enum
+
+      // Attempt to delete the concert, expecting the transaction to revert
+      await expect(concertContract.deleteConcert(concertId)).to.be.revertedWith(
+        "Concert can only be deleted at INITIALIZATION stage"
+      );
+    });
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
 
+const oneEth = 1000000000000000000;
 const StyledTableCell = ({ children, ...otherProps }) => (
   <TableCell {...otherProps}>
     <Typography variant="body2">{children}</Typography>
@@ -19,29 +20,33 @@ const FinancialTable = ({ data }) => {
         </TableHead>
         <TableBody>
           <TableRow>
-            <StyledTableCell>Balance</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.balance.toFixed(2)}`}</StyledTableCell>
+            <StyledTableCell>My Balance</StyledTableCell>
+            <StyledTableCell align="right">{`ETH ${data.balanceEth.toFixed(18)}`}</StyledTableCell>
           </TableRow>
           <TableRow>
             <StyledTableCell>Individual Ticket Cost</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.ticketCost.toFixed(2)}`}</StyledTableCell>
+            <StyledTableCell align="right">{`${data.currency} ${ (data.ticketCostWei / oneEth).toFixed(18) }`}</StyledTableCell>
+          </TableRow>
+          <TableRow>
+            <StyledTableCell>Number of Tickets</StyledTableCell>
+            <StyledTableCell align="right">{`${data.numberOfTickets}`}</StyledTableCell>
           </TableRow>
           <TableRow>
             <StyledTableCell>Total Cost of Tickets</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.totalCostOfTickets.toFixed(2)}`}</StyledTableCell>
+            <StyledTableCell align="right">{`${data.currency} ${ (data.totalCostOfTicketsWei / oneEth).toFixed(18) }`}</StyledTableCell>
           </TableRow>
           <TableRow>
             <StyledTableCell>Commission Fee</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.commissionFee.toFixed(2)}`}</StyledTableCell>
+            <StyledTableCell align="right">{`ETH ${ (data.commissionFeeWei / oneEth).toFixed(18) }`}</StyledTableCell>
           </TableRow>
-          <TableRow>
+          {/* <TableRow>
             <StyledTableCell>Final Amount to Pay</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.finalAmountToPay.toFixed(2)}`}</StyledTableCell>
+            <StyledTableCell align="right">{`Estimated: ${data.currency} ${ (data.finalAmountToPayWei / oneEth).toFixed(18) }`}</StyledTableCell>
           </TableRow>
           <TableRow>
             <StyledTableCell>Final Balance</StyledTableCell>
-            <StyledTableCell align="right">{`${data.currency} ${data.finalBalance.toFixed(2)}`}</StyledTableCell>
-          </TableRow>
+            <StyledTableCell align="right">{`Estimated: ${data.currency} ${ data.finalBalance.toString() }`}</StyledTableCell>
+          </TableRow> */}
         </TableBody>
       </Table>
     </TableContainer>

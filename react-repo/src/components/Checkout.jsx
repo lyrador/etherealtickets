@@ -1,30 +1,48 @@
 import React from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import NavBar from "./NavBar";
 import Header from "./Header";
-import { DataGrid } from '@mui/x-data-grid';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import PurchaseAlertDialog from "./PurchaseAlertDialog";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import TicketPurchaseCard from "./TicketPurchaseCard";
 import FinancialTable from './FinancialTable';
-import { useState, useEffect } from "react";
+
+import { Button, Backdrop, CircularProgress } from '@mui/material';
 
 import swift from '../images/swift-eras.jpg';
 import bruno from '../images/bruno.jpg';
+import edsheeran from '../images/edsheeran.jpg';
+import concertpic from '../images/concertOne.jpg'
 
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
+
+import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
+import { SECONDARY_MARKETPLACE } from "../constants/Address";
+
+const oneEth = 1000000000000000000;
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
 function Checkout() {
     const navigate = useNavigate();
-    const [open, setOpen] = React.useState(false);
     const { state } = useLocation();
-    const { rowId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
+    const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
+
+    const [open, setOpen] = React.useState(false);
+    const handleClickOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    const [openBackdrop, setOpenBackdrop] = React.useState(false);
+    const handleOpenBackdrop = () => setOpenBackdrop(true);
+    const handleCloseBackdrop = () => setOpenBackdrop(false);
 
     const [balance, setBalance] = useState('0');
+    const [buyingCommission, setBuyingComission] = useState(0);
 
     // Function to get the balance of the current account
     const getBalance = async (provider, account) => {
@@ -52,74 +70,87 @@ function Checkout() {
         }
     };
 
+    // Function to purchase
+    const purchase = async () => {
+        try {
+            console.log("Ticket Cost: ")
+            console.log(ticketCost);
+
+            console.log("Buying Commission: ")
+            console.log(buyingCommission);
+
+            console.log("Total Cost: ")
+            const totalCost = parseInt(buyingCommission) + parseInt(ticketCost);
+            console.log(totalCost);
+
+            console.log("Total Cost in Wei: ")
+            const totalCostInWei = ethers.utils.parseUnits(totalCost.toFixed(), "wei");
+            console.log(totalCostInWei);
+            console.log(parseInt(totalCostInWei));
+
+            console.log("Buy Result: ")
+            await secondaryMarketplaceContract.buyTicket(ticketId, {
+                value: totalCostInWei,
+            });
+            console.log("Success");
+
+            // add timeout and refresh
+            console.log("Reloading");
+            handleOpenBackdrop();
+            setTimeout(() => {
+                navigate(-1);
+            }, 16000);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+    
+    const setBuyingComissionFunc = async () => {
+        try {
+            console.log("Buying Commission: ")
+            const buyingCommissionVal = await secondaryMarketplaceContract.getBuyingCommission();
+            setBuyingComission(buyingCommissionVal)
+            console.log(buyingCommissionVal);
+            console.log("Buying commission set successfully")
+        } catch (err) {
+            console.log(err);
+        }
+    }; 
+
     useEffect(() => {
+        if (concertName.includes("Sheeran")) {
+            setImage(edsheeran);
+        } else if (concertName.includes("Taylor")) {
+            setImage(swift);
+        } else if (concertName.includes("Bruno")) {
+            setImage(bruno);
+        } else {
+            setImage(concertpic);
+        }
+        setBuyingComissionFunc();
         requestAccount();
     }, []);
 
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
-
-    const handleClose = () => {
-        setOpen(false);
-    };
-
-    const columns = [
-        { field: 'id', headerName: 'ID', flex: 1 },
-        { field: 'concertName', headerName: 'Concert Name', flex: 1 },
-        { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
-        { field: 'category', headerName: 'Category', width: 130 },
-        { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
-        { field: 'listedBy', headerName: 'Listed By', flex: 1 },
-        {
-            field: 'concertDate',
-            headerName: 'Concert Date',
-            type: 'string',
-            flex: 1,
-        },
-        {
-            field: 'buyButton', headerName: '', width: 150, disableClickEventBubbling: true,
-            renderCell: (cellValue) => {
-                return (
-                    <>
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                console.log(cellValue.row.buyButton);
-                                handleClickOpen();
-                            }
-                            }
-                        >
-                            Buy
-                        </Button>
-                        <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
-                    </>
-                );
-            }
-        },
-    ];
-
     // Assuming you have a data structure for the financials like this:
     const financials = {
-        balance: Number(balance),
-        ticketCost: 50,
-        numberOfTickets: 10,
-        commissionFee: 20,
+        balanceEth: Number(balance) ,
+        ticketCostWei: ticketCost,
+        numberOfTickets: 1,
+        commissionFeeWei: buyingCommission,
         currency: 'ETH'
     };
 
     // Perform calculations
-    financials.totalCostOfTickets = financials.ticketCost * financials.numberOfTickets;
-    financials.finalAmountToPay = financials.totalCostOfTickets - financials.commissionFee;
-    financials.finalBalance = financials.balance - financials.finalAmountToPay;
+    financials.totalCostOfTicketsWei = financials.ticketCostWei * financials.numberOfTickets;
+
+    const [image, setImage] = useState('');
 
     return (
         <>
             <Header />
-            <h2>Checkout with rowId : {rowId}</h2>
-            <h3>{balance}</h3>
-            <TicketPurchaseCard 
-                cardImg={swift} 
+            <h2>Resale checkout with TicketID : {ticketId}</h2>
+            <TicketPurchaseCard
+                cardImg={image}
                 concertName={concertName}
                 concertLoc={concertLoc}
                 category={category}
@@ -131,14 +162,15 @@ function Checkout() {
             </div>
             <Button variant="contained" color="error" onClick={() => navigate(-1)}>Cancel checkout and return</Button>
             <>
-                <Button
-                    variant="contained"
-                    onClick={() => setOpen(true)}
-                >
+                <Button variant="contained" onClick={() => purchase()}>
                     Proceed
                 </Button>
                 <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
             </>
+            <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
+          <CircularProgress color="inherit" />
+          &nbsp; &nbsp; Wait a moment...
+        </Backdrop>
         </>
     );
 }
