@@ -48,13 +48,16 @@ contract SecondaryMarketplace {
     Marketplace primaryMarketContract;
     uint256 buyingCommission;
     uint256 sellingCommission;
+    address secondaryMarketplaceContractOwner;
 
     event SecondaryMarketplaceCreated(uint256 indexed concertId);
     event TicketListed(uint256 indexed ticketId, uint256 indexed concertId, address lister);
     event TicketUnListed(uint256 indexed ticketId, uint256 indexed concertId, address unlister);
     event ResaleTicketBought(uint256 indexed ticketId, uint256 indexed concertId, address seller, address buyer);
+    event WithdrawBalance(address owner, uint256 bal);
 
     constructor(Concert concertContractAddr, Ticket ticketContractAddr, Marketplace primaryMarketContractAddr) public {
+        secondaryMarketplaceContractOwner = msg.sender;
         ticketContract = ticketContractAddr;
         concertContract = concertContractAddr;
         primaryMarketContract = primaryMarketContractAddr;
@@ -68,8 +71,22 @@ contract SecondaryMarketplace {
         _;
     }
 
-    function createSecondaryMarketplace(uint256 concertId) public secondaryMarketplaceValidAndOpen(concertId) {
+    modifier onlySecondaryMarketplaceContractOwner() {
+        require(msg.sender == secondaryMarketplaceContractOwner, "Not owner of secondaryMarketplace contract");
+        _;
+    }
+
+    modifier onlyConcertContractOwner() {
         require(msg.sender == concertContract.getOwner(), "Not owner of concert contract");
+        _;
+    }
+
+    modifier onlyTicketOwner(uint256 ticketId) {
+        require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
+        _;
+    }
+
+    function createSecondaryMarketplace(uint256 concertId) public secondaryMarketplaceValidAndOpen(concertId) onlyConcertContractOwner {
         uint256[] memory initialTickets;
         secondaryMarketplace memory newSecondaryMarketplace = secondaryMarketplace(msg.sender, initialTickets);
         secondaryMarketplaces[concertId] = newSecondaryMarketplace;
@@ -77,16 +94,14 @@ contract SecondaryMarketplace {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
-        require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
+    function listTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) onlyTicketOwner(ticketId) {
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
         allListedTicketIds.push(ticketId);
         emit TicketListed(ticketId, concertId, msg.sender);
     }
 
-    function unlistTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
-        require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
+    function unlistTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) onlyTicketOwner(ticketId) {
         uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
         removeElement(allListedTicketIds, ticketId);
@@ -207,5 +222,15 @@ contract SecondaryMarketplace {
             }
         }
         return false;
+    }
+
+    function getBalance() public view onlySecondaryMarketplaceContractOwner returns (uint256) {
+        return address(this).balance;
+    }
+
+    function withdrawAll() public payable onlySecondaryMarketplaceContractOwner {
+        uint256 bal = address(this).balance;
+        payable(secondaryMarketplaceContractOwner).transfer(bal);
+        emit WithdrawBalance(secondaryMarketplaceContractOwner, bal);
     }
 }

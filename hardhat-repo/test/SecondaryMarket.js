@@ -472,4 +472,74 @@ describe("SecondaryMarketplace", function () {
             ).to.be.revertedWith("Owner cannot buy own listed ticket");
         });
     });
+
+    describe("Wtihdraw Balance", function () {
+        it("Should withdraw balance", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                ticketContract,
+                secondaryMarketContract,
+                owner,
+                addr1,
+                addr2
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // List ticket from address 1, who has previously bought ticket
+            await secondaryMarketContract.connect(addr1).listTicket(1);
+    
+            const initialSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(initialSecondaryMarketBal).to.equal(0);
+    
+            // Case where buy transaction is successful
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
+    
+            // Check the balance of the contract after receiving Ether (before withdraw)
+            const secondaryMarketBalBeforeWithdraw = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(secondaryMarketBalBeforeWithdraw).to.equal(1000);
+
+            expect(await secondaryMarketContract.connect(owner).withdrawAll())
+                .to.emit(secondaryMarketContract, "WithdrawBalance")
+                .withArgs(owner, 1000);
+
+            // Check the balance of the contract after withdraw
+            const secondaryMarketBalAfterWithdraw = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(secondaryMarketBalAfterWithdraw).to.equal(0);
+        });
+
+        it("Should fail to withdraw balance if called by non-owner", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                ticketContract,
+                secondaryMarketContract,
+                addr1,
+                addr2
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // List ticket from address 1, who has previously bought ticket
+            await secondaryMarketContract.connect(addr1).listTicket(1);
+    
+            // Case where buy transaction is successful
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
+
+            await expect(
+                secondaryMarketContract.connect(addr1).withdrawAll()
+            ).to.be.revertedWith("Not owner of secondaryMarketplace contract");
+        });
+    });
 });
