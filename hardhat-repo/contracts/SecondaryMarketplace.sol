@@ -71,6 +71,14 @@ contract SecondaryMarketplace {
         require(concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Marketplace not open");
         _;
     }
+    
+    modifier isTicketOwner(uint256 ticketId) {
+        require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
+        Ticket.Ticket memory ticket = ticketContract.getTicketDetailsFromTicketId(ticketId);
+        require(concertContract.isValidConcert(ticket.concertId), "Concert does not exist");
+        require(concertContract.getConcertStage(ticket.concertId) == Concert.Stage.SECONDARY_SALE, "Marketplace not open");
+        _;
+    }
 
     function createSecondaryMarketplace(uint256 concertId) public secondaryMarketplaceValidAndOpen(concertId) {
         require(msg.sender == concertContract.getOwner(), "Not owner of concert contract");
@@ -80,26 +88,21 @@ contract SecondaryMarketplace {
     }
 
     // reseller list ticket
-    function listTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
-        require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
+    function listTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
         require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         secondaryMarketplaces[concertId].listedTicketIds.push(ticketId);
         allListedTicketIds.push(ticketId);
     }
 
-    function unlistTicket(uint256 ticketId, string memory passportId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId, passportId)) {
-        require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
+    function unlistTicket(uint256 ticketId) public secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
         require(ticketContract.ownerOf(ticketId) == msg.sender, "Not owner of ticket");
-        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId, passportId);
-        
-        // unlist ticket on secondary marketplace
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
         removeElement(allListedTicketIds, ticketId);
     }
 
-    function buyTicket(uint256 ticketId, uint256 concertId) public payable secondaryMarketplaceValidAndOpen(concertId) {
-        require(ticketContract.isValidTicket(ticketId), "Ticket is invalid");
+    function buyTicket(uint256 ticketId) public payable secondaryMarketplaceValidAndOpen(ticketContract.getConcertIdFromTicketId(ticketId)) {
         require(ticketContract.ownerOf(ticketId) != msg.sender, "Owner cannot buy own listed ticket");
 
         uint256 ticketPrice = ticketContract.getTicketCost(ticketId);
@@ -113,6 +116,7 @@ contract SecondaryMarketplace {
         ticketContract.transferFrom(ticketOwner, msg.sender, ticketId);
         //ticketContract.updateTicketOwner(ticketId, msg.sender);
 
+        uint256 concertId = ticketContract.getConcertIdFromTicketId(ticketId);
         removeElement(secondaryMarketplaces[concertId].listedTicketIds, ticketId);
         removeElement(allListedTicketIds, ticketId);
         emit ResaleTicketBought(ticketId, concertId, ticketOwner, msg.sender);

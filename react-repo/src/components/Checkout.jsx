@@ -92,7 +92,7 @@ function Checkout() {
             console.log(parseInt(totalCostInWei));
 
             console.log("Buy Result: ")
-            await secondaryMarketplaceContract.buyTicket(ticketId, concertId, {
+            await secondaryMarketplaceContract.buyTicket(ticketId, {
                 value: totalCostInWei,
             });
             console.log("Success");

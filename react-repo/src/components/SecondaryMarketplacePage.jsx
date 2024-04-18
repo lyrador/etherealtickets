@@ -107,11 +107,23 @@ function SecondaryMarketplacePage() {
   };
 
   const listTicketWithId = async (ticketId) => {
-    const result = await secondaryMarketplaceContract.listTicket(ticketId, "S1234567A");
+    try {
+      console.log("List ticket: ")
+      const result = await secondaryMarketplaceContract.listTicket(ticketId);
+      console.log("Success");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const unlistTicketWithId = async (ticketId) => {
-    const result = await secondaryMarketplaceContract.unlistTicket(ticketId, "S1234567A");
+    try {
+      console.log("Unlist ticket: ")
+      const result = await secondaryMarketplaceContract.unlistTicket(ticketId);
+      console.log("Success");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   useEffect(() => {

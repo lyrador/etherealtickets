@@ -78,8 +78,8 @@ contract Ticket is ERC721 {
         keccak256(abi.encodePacked(tickets[ticketId].passportId)) == keccak256(abi.encodePacked(passportId));
     }
 
-    function getConcertIdFromTicketId(uint256 ticketId, string memory passportId) public view returns (uint256) {
-        require(validateTicket(ticketId, passportId), "Ticket is invalid");
+    function getConcertIdFromTicketId(uint256 ticketId) public view returns (uint256) {
+        require(isValidTicket(ticketId));
         return tickets[ticketId].concertId;
     }
 
@@ -89,11 +89,11 @@ contract Ticket is ERC721 {
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {
-        return ownerOf(ticketId) != address(0);
+        return ownerOf(ticketId) != address(0); //revertedWithCustomError "ERC721NonexistentToken" if invalid
     }
 
     function getTicketCost(uint256 ticketId) public view returns (uint256) { 
-        require(isValidTicket(ticketId), "Ticket is invalid");
+        require(isValidTicket(ticketId));
         return tickets[ticketId].cost;
     }
 
