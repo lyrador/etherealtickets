@@ -88,7 +88,7 @@ contract Marketplace {
             uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
             uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
             string memory passportId = passportIds[i];
-            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId); 
+            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId, false); 
         }
 
         /// Pop buyer from queue

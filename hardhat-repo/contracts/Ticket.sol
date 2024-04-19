@@ -15,6 +15,7 @@ contract Ticket is ERC721 {
         uint24 category;
         uint256 cost; 
         string passportId; 
+        bool validatedForUse;
     }
 
     mapping(uint256 => Ticket) public tickets;
@@ -25,7 +26,8 @@ contract Ticket is ERC721 {
         address owner,
         uint24 category, 
         uint256 cost, 
-        string passportId
+        string passportId,
+        bool validatedForUse
     ); // consider using hashes of passportIds instead for privacy
     
     // event to track ownership changes of tickets
@@ -35,6 +37,13 @@ contract Ticket is ERC721 {
         address indexed newOwner, 
         uint256 concertId, 
         uint256 timestamp
+    );
+
+    // event to track when a ticket is used for entry into a concert
+    event TicketUsed(
+        uint256 indexed ticketId, 
+        uint256 concertId, 
+        address attendee
     );
 
     constructor(address concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
@@ -47,9 +56,10 @@ contract Ticket is ERC721 {
         address buyer,
         uint24 category, 
         uint256 cost, 
-        string memory passportId) public { 
+        string memory passportId,
+        bool validatedForUse
+        ) public { 
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
-        //require(concertContract.getOwner() == msg.sender, "Only the concert owner can create tickets");
 
         numOfTickets = ticketId;
 
@@ -59,12 +69,13 @@ contract Ticket is ERC721 {
             prevTicketOwner: address(0), // initially, there's no previous owner
             category: category,
             cost: cost,
-            passportId: passportId // assignment unique passportId of current holder
+            passportId: passportId, // assignment unique passportId of current holder
+            validatedForUse: false
         });
 
         _safeMint(buyer, ticketId);
 
-        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId);
+        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false);
     }
 
     modifier onlyTicketOwner(uint256 ticketId) {
@@ -72,10 +83,35 @@ contract Ticket is ERC721 {
         _; 
     }
 
+    modifier validConcert(uint256 concertId) {
+        require(concertContract.isValidConcert(concertId), "Invalid concert id");
+        _;
+    }
+
+    modifier onlyConcertOpen(uint256 concertId) {
+        require(concertContract.getConcertStage(concertId) == Concert.Stage.OPEN, "You cannot use ticket for concert as it is not in the correct Stage");
+        _;
+    }
+
     function validateTicket(uint256 ticketId, string memory passportId) public view returns (bool) {
         // check if ticket exists and validate ownership using passportId 
         return tickets[ticketId].ticketId == ticketId && 
         keccak256(abi.encodePacked(tickets[ticketId].passportId)) == keccak256(abi.encodePacked(passportId));
+    }
+
+    function useTicketForConcert(uint256 concertId, uint256 ticketId, string memory passportId) 
+        public 
+        onlyTicketOwner(ticketId) 
+        validConcert(concertId) 
+        onlyConcertOpen(concertId) 
+        returns (bool) 
+    {
+        require(tickets[ticketId].ticketId != 0, "Ticket does not exist");
+        // require(concertContract.getOwner() == msg.sender, "Concert Organizer has to approve ticket");
+        require(validateTicket(ticketId, passportId), "Ticket is not eligible for concert");
+        tickets[ticketId].validatedForUse = true;
+        emit TicketUsed(ticketId, concertId, msg.sender);
+        return true;
     }
 
     function getConcertIdFromTicketId(uint256 ticketId) public view returns (uint256) {
