@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import NavBar from "./NavBar";
 import Header from "./Header";
 import Concert from "../contracts/Concert.json";
-import { CONCERT } from "../constants/Address";
+import { CONCERT, ORGANIZER } from "../constants/Address";
 import { STAGE } from "../constants/Enum";
 import Table from "react-bootstrap/Table";
 import Button from "react-bootstrap/Button";
@@ -21,9 +21,31 @@ function AllConcerts() {
     const [location, setLocation] = useState("");
     const [ticketCosts, setTicketCosts] = useState("");
     const [seatNumbers, setSeatNumbers] = useState("");
-    const [dateNumber, setDateNumber] = useState(""); // This is just an integer now
-    const [currentConcert, setCurrentConcert] = useState(null); // Holds the concert currently being edited
+    const [dateNumber, setDateNumber] = useState(""); 
+    const [currentConcert, setCurrentConcert] = useState(null);
+    const [salesDate, setSalesDate] = useState("");
+    const [isOwner, setIsOwner] = useState(false);
     const navigate = useNavigate();
+
+    const getAccountOnLoad = async () => {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setIsOwner(accounts[0] == ORGANIZER);
+      };
+    
+      const handleAccountsChanged = (accounts) => {
+        setIsOwner(accounts[0] == ORGANIZER);
+      };
+    
+      useEffect(() => {
+        getAccountOnLoad();
+    
+        // Subscribe to Metamask account changes
+        window.ethereum.on("accountsChanged", handleAccountsChanged);
+      }, []);
+
+
 
     const fetchConcertDetails = async () => {
         try {
@@ -36,6 +58,7 @@ function AllConcerts() {
                 res.push(concert.categorySeatNumber.join(", ")); // Category Seats
                 res.push(concert.ticketCost.map(cost => `${ethers.utils.formatEther(cost)} ETH`).join(", ")); // Ticket Costs
                 res.push(parseInt(concert.concertDate)); // Concert Date
+                res.push(parseInt(concert.salesDate)) // Sales Date
                 res.push(STAGE[concert.stage]); // Stage
                 return res;
             });
@@ -53,31 +76,34 @@ function AllConcerts() {
     const handleCreateConcert = async () => {
         const ticketCostArray = ticketCosts.split(",").map(cost => ethers.utils.parseEther(cost.trim()));
         const seatNumberArray = seatNumbers.split(",").map(num => parseInt(num.trim()));
-
+    
         try {
             const transaction = await concertContract.createConcert(
                 name,
                 location,
                 ticketCostArray,
                 seatNumberArray,
-                parseInt(dateNumber) // Use the integer directly
+                parseInt(dateNumber), // Concert date
+                parseInt(salesDate)  // Sales start date
             );
-            await transaction.wait(); 
-
+            await transaction.wait();
+    
             // After successful transaction fetch concert details again
             fetchConcertDetails();
-
+    
             // Reset form fields
             setName('');
             setLocation('');
             setTicketCosts('');
             setSeatNumbers('');
             setDateNumber('');
+            setSalesDate('');
         } catch (error) {
             console.error('Error creating concert:', error);
             alert(`Failed to create concert: ${error.message}`);
         }
     };
+    
 
     const handleUpdateConcert = async () => {
         if (!currentConcert) return;
@@ -90,9 +116,10 @@ function AllConcerts() {
                 currentConcert[0], // Concert ID
                 name,
                 location,
-                parseInt(dateNumber),
                 ticketCostArray,
-                seatNumberArray
+                seatNumberArray,
+                parseInt(dateNumber),
+                parseInt(salesDate) 
             );
             await transaction.wait();
 
@@ -106,6 +133,7 @@ function AllConcerts() {
             setTicketCosts('');
             setSeatNumbers('');
             setDateNumber('');
+            setSalesDate('');
         } catch (error) {
             console.error('Error updating concert:', error);
             alert(`Failed to update concert: ${error.message}`);
@@ -118,8 +146,10 @@ function AllConcerts() {
         setLocation(concert[2]);
         setTicketCosts(concert[4].replace(" ETH", "").split(", ").join(","));
         setSeatNumbers(concert[3].split(", ").join(","));
-        setDateNumber(concert[5].toString());
+        setDateNumber(concert[5]);
+        setSalesDate(concert[6]);  
     };
+    
 
     const handleDeleteConcert = async (id) => {
         try {
@@ -162,6 +192,11 @@ function AllConcerts() {
                     <Form.Label>Concert Date</Form.Label>
                     <Form.Control type="number" placeholder="Enter a number" value={dateNumber} onChange={e => setDateNumber(e.target.value)} />
                 </Form.Group>
+                <Form.Group className="mb-3">
+                    <Form.Label>Sales Start Date</Form.Label>
+                    <Form.Control type="number" placeholder="Enter the sales start date" value={salesDate} onChange={e => setSalesDate(e.target.value)} />
+                </Form.Group>
+
                 {currentConcert ? (
                     <Button variant="success" onClick={handleUpdateConcert}>Update Concert</Button>
                 ) : (
