@@ -107,7 +107,7 @@ describe("Ticket", function () {
     );
     // Create concert - stage INITIALIZATION
     await concertContract
-      .connect(addr2) // concert ORGANIZER
+      .connect(owner) // concert ORGANIZER
       .createConcert(
         "Taylor Swift Day 1",
         "National Stadium",
