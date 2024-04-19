@@ -136,14 +136,6 @@ async function main() {
   await concert.updateConcertStage(3);
   await concert.updateConcertStage(3);
 
-  // Ticket 1
-  await marketplace.connect(addr1).joinQueue(3);
-  await marketplace
-    .connect(addr1)
-    .buyTicket(3, [1], ["S1234567A"], { value: THREE_ETH });
-  // await secondaryMarketPlace.createSecondaryMarketplace(3);
-  // await secondaryMarketPlace.connect(addr1).listTicket(1, "S1234567A");
-
   // Concert 4: Stage = OPEN
   await concert.createConcert(
     "Bruno Mars",
@@ -156,7 +148,7 @@ async function main() {
   await concert.updateConcertStage(4);
   await concert.updateConcertStage(4);
 
-  // Ticket 2 and 3
+  // Ticket 1 and 4
   await marketplace.connect(addr1).joinQueue(4);
   await marketplace
     .connect(addr1)
