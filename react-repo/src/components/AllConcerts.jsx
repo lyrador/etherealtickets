@@ -84,7 +84,7 @@ function AllConcerts() {
                 ticketCostArray,
                 seatNumberArray,
                 parseInt(dateNumber), // Concert date
-                parseInt(salesDate)  // Sales start date
+                parseInt(salesDate),  // Sales start date
             );
             await transaction.wait();
     
@@ -212,6 +212,7 @@ function AllConcerts() {
                          <th>Category Seats</th>
                          <th>Ticket Costs</th>
                          <th>Concert Date</th>
+                         <th>Sales Date</th>
                          <th>Stage</th>
                          <th>Edit</th>
                          <th>Delete</th>
@@ -227,6 +228,7 @@ function AllConcerts() {
                         <td>{concert[4]}</td>
                         <td>{concert[5]}</td>
                         <td>{concert[6]}</td>
+                        <td>{concert[7]}</td>
                         <td>
                             <Button onClick={() => startUpdate(concert)}>Edit</Button>
                         </td>
