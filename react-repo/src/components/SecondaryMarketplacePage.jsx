@@ -49,7 +49,7 @@ function SecondaryMarketplacePage() {
     { field: 'concertId', headerName: 'Concert Id', flex: 1 },
     { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
     { field: 'category', headerName: 'Category', width: 130 },
-    { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
+    { field: 'ticketCost', headerName: 'Ticket Cost (wei)', flex: 1 },
     { field: 'listedBy', headerName: 'Listed By', flex: 1 },
     { field: 'concertDate', headerName: 'Concert Date', type: 'string', flex: 1 },
     { field: 'seatNumber', headerName: 'Seat No.', flex: 1 },

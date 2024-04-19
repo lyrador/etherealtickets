@@ -6,6 +6,7 @@ import SecondaryMarketplacePage from "./components/SecondaryMarketplacePage";
 import Seats from "./components/Seats";
 import Checkout from "./components/Checkout";
 import TicketsPage from "./components/TicketsPage";
+import TicketsTab from "./components/TicketsTab";
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
           path="/secondary-marketplace"
           element={<SecondaryMarketplacePage />}
         />
-        <Route path="/tickets" element={<TicketsPage />} />
+        <Route path="/tickets" element={<TicketsTab />} />
         <Route path="/checkout" element={<Checkout />} />
       </Routes>
     </div>

@@ -7,6 +7,7 @@ contract Ticket is ERC721 {
     
     Concert concertContract;
     uint256 numOfTickets;
+    address owner;
     
     struct Ticket {
         uint256 ticketId;
@@ -21,7 +22,7 @@ contract Ticket is ERC721 {
         uint concertDate;
     }
 
-    mapping(uint256 => Ticket) public tickets;
+    mapping(uint256 => Ticket) public tickets; // using 1-based indexing
 
     event TicketCreated(
         uint256 indexed ticketId, 
@@ -43,6 +44,7 @@ contract Ticket is ERC721 {
 
     constructor(address concertAddress, string memory _name, string memory _symbol) ERC721(_name, _symbol) public {
         concertContract = Concert(concertAddress);
+        owner = msg.sender;
     }
 
     function createTicket(
@@ -78,6 +80,11 @@ contract Ticket is ERC721 {
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false, seatNumber);
     }
 
+    modifier onlyContractOwner() {
+        require(msg.sender == owner, "Caller is not the owner of the contract"); 
+        _; 
+    }
+
     modifier onlyTicketOwner(uint256 ticketId) {
         require(msg.sender == ownerOf(ticketId), "Caller is not the ticket owner"); 
         _; 
@@ -99,9 +106,9 @@ contract Ticket is ERC721 {
         keccak256(abi.encodePacked(tickets[ticketId].passportId)) == keccak256(abi.encodePacked(passportId));
     }
 
-    function useTicketForConcert(uint256 concertId, uint256 ticketId, string memory passportId) 
+    function stampTicketForConcert(uint256 concertId, uint256 ticketId, string memory passportId) 
         public 
-        onlyTicketOwner(ticketId) 
+        onlyContractOwner()
         validConcert(concertId) 
         onlyConcertOpen(concertId) 
         returns (bool) 
@@ -168,5 +175,29 @@ contract Ticket is ERC721 {
     function updateTicketPassportId(uint256 ticketId, string memory passportId) public {
         require(isValidTicket(ticketId));
         tickets[ticketId].passportId = passportId;
+    }
+
+    function getAllTicketsForOpenConcerts() public view onlyContractOwner returns (Ticket[] memory) {
+        Concert.Concert[] memory openConcerts = concertContract.getConcertsByStage(3);
+        uint256 count = 0;
+        for (uint256 i = 1; i <= numOfTickets; i++) {
+            for (uint256 j = 0; j < openConcerts.length; j++) {
+                if (tickets[i].concertId == openConcerts[j].id) {
+                    count++;
+                }
+            }
+        }
+        Ticket[] memory openTickets = new Ticket[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i <= numOfTickets; i++) {
+            for (uint256 j = 0; j < openConcerts.length; j++) {
+                if (tickets[i].concertId == openConcerts[j].id) {
+                    openTickets[index] = tickets[i];
+                    index++;
+                    if (index == count) return openTickets; // early terminate once all tickets intended found
+                }
+            }
+        }
+        return openTickets;
     }
 }

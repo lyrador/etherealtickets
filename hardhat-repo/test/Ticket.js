@@ -211,9 +211,9 @@ describe("Ticket", function () {
     );
   
     // Attempt to use the ticket for entry
-    await expect(ticketContract.connect(addr1).useTicketForConcert(1, 1, "PASS123"))
+    await expect(ticketContract.connect(owner).stampTicketForConcert(1, 1, "PASS123"))
       .to.emit(ticketContract, "TicketUsed") // Assuming you emit this event when a ticket is used
-      .withArgs(1, 1, addr1.address);
+      .withArgs(1, 1, owner.address);
 
     // Check if the ticket's `validatedForUse` is set to true
     const ticketDetails = await ticketContract.getTicketDetailsFromTicketId(1);
@@ -253,7 +253,7 @@ describe("Ticket", function () {
     );
   
     // Attempt to use the ticket for entry
-    await expect(ticketContract.connect(addr1).useTicketForConcert(1, 1, "PASS123"))
+    await expect(ticketContract.connect(owner).stampTicketForConcert(1, 1, "PASS123"))
       .to.be.revertedWith("You cannot use ticket for concert as it is not in the correct Stage");
   });
   

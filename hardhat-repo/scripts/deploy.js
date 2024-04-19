@@ -148,7 +148,7 @@ async function main() {
   await concert.updateConcertStage(4);
   await concert.updateConcertStage(4);
 
-  // Ticket 1 and 4
+  // Ticket 1 and 2
   await marketplace.connect(addr1).joinQueue(4);
   await marketplace
     .connect(addr1)
