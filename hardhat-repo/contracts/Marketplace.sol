@@ -80,15 +80,16 @@ contract Marketplace {
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
-            seatTaken[concertId][seatNumbers[i]] = msg.sender;
-            seatsTaken[concertId].push(seatNumbers[i]);
+            uint24 seatNumber = seatNumbers[i];
+            seatTaken[concertId][seatNumber] = msg.sender;
+            seatsTaken[concertId].push(seatNumber);
             // Mint NFT
             ticketId++;
             // Create ticket object
-            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
-            uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
+            uint24 category = concertContract.getSeatCategory(concertId, seatNumber);
+            uint256 cost = concertContract.getSeatCost(concertId, seatNumber);
             string memory passportId = passportIds[i];
-            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId, false); 
+            ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId, false, seatNumber); 
         }
 
         /// Pop buyer from queue

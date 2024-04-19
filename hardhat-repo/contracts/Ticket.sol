@@ -11,11 +11,14 @@ contract Ticket is ERC721 {
     struct Ticket {
         uint256 ticketId;
         uint256 concertId;
-        address prevTicketOwner;
         uint24 category;
         uint256 cost; 
         string passportId; 
         bool validatedForUse;
+        uint24 seatNumber;
+        string concertName;
+        string concertLocation;
+        uint concertDate;
     }
 
     mapping(uint256 => Ticket) public tickets;
@@ -27,17 +30,9 @@ contract Ticket is ERC721 {
         uint24 category, 
         uint256 cost, 
         string passportId,
-        bool validatedForUse
+        bool validatedForUse,
+        uint24 seatNumber
     ); // consider using hashes of passportIds instead for privacy
-    
-    // event to track ownership changes of tickets
-    event TicketOwnerUpdated(
-        uint256 indexed ticketId, 
-        address indexed oldOwner,
-        address indexed newOwner, 
-        uint256 concertId, 
-        uint256 timestamp
-    );
 
     // event to track when a ticket is used for entry into a concert
     event TicketUsed(
@@ -52,30 +47,35 @@ contract Ticket is ERC721 {
 
     function createTicket(
         uint256 ticketId, 
-        uint256 concertId, 
-        address buyer,
+        uint256 concertId,
+        address buyer, 
         uint24 category, 
         uint256 cost, 
         string memory passportId,
-        bool validatedForUse
+        bool validatedForUse,
+        uint24 seatNumber
         ) public { 
         require(concertContract.isValidConcert(concertId), "Concert is invalid");
+        Concert.Concert memory concert = concertContract.getConcertDetailsFromConcertId(concertId);
 
         numOfTickets = ticketId;
 
         tickets[ticketId] = Ticket({
             ticketId: ticketId,
             concertId: concertId, 
-            prevTicketOwner: address(0), // initially, there's no previous owner
             category: category,
             cost: cost,
             passportId: passportId, // assignment unique passportId of current holder
-            validatedForUse: false
+            validatedForUse: false,
+            seatNumber: seatNumber,
+            concertName: concert.name,
+            concertLocation: concert.location,
+            concertDate: concert.concertDate
         });
 
         _safeMint(buyer, ticketId);
 
-        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false);
+        emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false, seatNumber);
     }
 
     modifier onlyTicketOwner(uint256 ticketId) {
@@ -117,11 +117,6 @@ contract Ticket is ERC721 {
     function getConcertIdFromTicketId(uint256 ticketId) public view returns (uint256) {
         require(isValidTicket(ticketId));
         return tickets[ticketId].concertId;
-    }
-
-    function getPreviousTicketOwner(uint256 ticketId, string memory passportId) public view returns (address) {
-        require(validateTicket(ticketId, passportId), "Ticket is invalid");
-        return tickets[ticketId].prevTicketOwner;
     }
 
     function isValidTicket(uint256 ticketId) public view returns (bool) {

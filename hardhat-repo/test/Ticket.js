@@ -52,10 +52,10 @@ describe("Ticket", function () {
       );
     // ticketId = 1, concertId = 1, buyer = owner, category = 1, cost = ONE_ETH, passportId = PASS123
     await expect(
-      ticketContract.createTicket(1, 1, addr1.address, 1, ONE_ETH, "PASS123", false)
+      ticketContract.createTicket(1, 1, addr1.address, 1, ONE_ETH, "PASS123", false, 0)
     )
       .to.emit(ticketContract, "TicketCreated")
-      .withArgs(1, 1, addr1.address, 1, ONE_ETH, "PASS123", false);
+      .withArgs(1, 1, addr1.address, 1, ONE_ETH, "PASS123", false, 0);
   });
 
   // Failed to create ticket for non-existent concert
@@ -75,7 +75,7 @@ describe("Ticket", function () {
       );
     // concertId 999 does not exist
     await expect(ticketContract.createTicket
-      (1, 999, addr1.address, 1, ONE_ETH, "PASS123", false))
+      (1, 999, addr1.address, 1, ONE_ETH, "PASS123", false, 0))
       .to.be.revertedWith("Concert is invalid");
   });
 
@@ -103,7 +103,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
     // Update ticket's ownership
     await ticketContract.updateTicketPassportId(1, "NEWPASS123");
@@ -136,7 +137,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
     // Validate the ticket
     const isValid = await ticketContract.validateTicket(1, "PASS123");
@@ -167,7 +169,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
     // Attempt to validate the ticket with an incorrect passport ID
     const isValid = await ticketContract.validateTicket(1, "WRONGPASS123");
@@ -203,7 +206,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
   
     // Attempt to use the ticket for entry
@@ -244,7 +248,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
   
     // Attempt to use the ticket for entry
@@ -276,7 +281,8 @@ describe("Ticket", function () {
       1,
       ONE_ETH,
       "PASS123",
-      false
+      false,
+      0
     );
     // Call the getTicketDetails function
     const [ticketId, concertId, category, cost] =

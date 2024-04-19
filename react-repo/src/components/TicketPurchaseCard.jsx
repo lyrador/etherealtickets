@@ -6,7 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 
-export default function TicketPurchaseCard({cardImg, concertName, concertLoc, category, ticketCost, concertDate}) {
+export default function TicketPurchaseCard({cardImg, concertName, concertLoc, category, ticketCost, concertDate, seatNumber}) {
     console.log(concertName);
 
     return (
@@ -32,6 +32,9 @@ export default function TicketPurchaseCard({cardImg, concertName, concertLoc, ca
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary" component="div">
                         Concert Date: {concertDate}
+                    </Typography>
+                    <Typography variant="subtitle2" color="text.secondary" component="div">
+                        Seat No.: {seatNumber}
                     </Typography>
                 </CardContent>
                 {/* <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pl: 1, pb: 1 }}>

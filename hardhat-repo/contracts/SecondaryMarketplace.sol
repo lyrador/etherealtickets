@@ -16,29 +16,10 @@ contract SecondaryMarketplace {
     }
 
     struct SecondaryMarketTicket {
-        uint256 ticketId;
-        uint256 concertId;
-        address prevTicketOwner;
-        uint24 category;
-        uint256 cost; 
-        string passportId; 
-        string concertName;
-        string concertLocation;
-        uint concertDate;
+        Ticket.Ticket ticket;
         address listedBy;
-    }
-
-    struct OwnedTicket {
-        uint256 ticketId;
-        uint256 concertId;
-        uint24 category;
-        uint256 cost; 
-        string passportId; 
-        string concertName;
-        string concertLocation;
-        uint concertDate;
         bool isListed;
-        bool isSecondarySaleStage;
+        Concert.Stage concertStage;
     }
 
     uint256[] allListedTicketIds;
@@ -161,46 +142,28 @@ contract SecondaryMarketplace {
     }
 
     function getAllListedTicketDetailsArray() public view returns (SecondaryMarketTicket[] memory) {
-        // for loop size
         uint256[] memory listedTicketIds = getAllListedTickets();
         SecondaryMarketTicket[] memory ticketDetailsArr = new SecondaryMarketTicket[](listedTicketIds.length);
         for (uint256 i = 0; i < listedTicketIds.length; i++) {
             Ticket.Ticket memory ticket = ticketContract.getTicketDetailsFromTicketId(listedTicketIds[i]);
-            Concert.Concert memory concert = concertContract.getConcertDetailsFromConcertId(ticket.concertId);
-            uint256 ticketId = ticket.ticketId;
-            uint256 concertId = ticket.concertId;
-            address prevTicketOwner = ticket.prevTicketOwner;
-            uint24 category = ticket.category;
-            uint256 cost = ticket.cost; 
-            string memory passportId = ticket.passportId; 
-            string memory concertName = concert.name;
-            string memory concertLocation = concert.location;
-            uint concertDate = concert.concertDate;
-            address listedBy = ticketContract.ownerOf(ticketId);
-            SecondaryMarketTicket memory newSecondaryMarketTicket = SecondaryMarketTicket(ticketId, concertId, prevTicketOwner, category, cost, passportId, concertName, concertLocation, concertDate, listedBy);
+            address listedBy = ticketContract.ownerOf(ticket.ticketId);
+            bool isListed = true;
+            Concert.Stage concertStage = concertContract.getConcertStage(ticket.concertId);
+            SecondaryMarketTicket memory newSecondaryMarketTicket = SecondaryMarketTicket(ticket, listedBy, isListed, concertStage);
             ticketDetailsArr[i] = newSecondaryMarketTicket;
         }
         return ticketDetailsArr;
     }
 
-    function getOwnedTicketDetailsArray() public view returns (OwnedTicket[] memory) {
-        // for loop size
+    function getOwnedTicketDetailsArray() public view returns (SecondaryMarketTicket[] memory) {
         Ticket.Ticket[] memory ownedTickets = ticketContract.getOwnedTickets(msg.sender);
-        OwnedTicket[] memory ticketDetailsArr = new OwnedTicket[](ownedTickets.length);
+        SecondaryMarketTicket[] memory ticketDetailsArr = new SecondaryMarketTicket[](ownedTickets.length);
         for (uint256 i = 0; i < ownedTickets.length; i++) {
             Ticket.Ticket memory ticket = ownedTickets[i];
-            Concert.Concert memory concert = concertContract.getConcertDetailsFromConcertId(ticket.concertId);
-            uint256 ticketId = ticket.ticketId;
-            uint256 concertId = ticket.concertId;
-            uint24 category = ticket.category;
-            uint256 cost = ticket.cost; 
-            string memory passportId = ticket.passportId; 
-            string memory concertName = concert.name;
-            string memory concertLocation = concert.location;
-            uint concertDate = concert.concertDate;
-            bool isListed = isTicketIdListed(ticketId);
-            bool isSecondarySaleStage = (concert.stage == Concert.Stage(2));
-            OwnedTicket memory newOwnedTicket = OwnedTicket(ticketId, concertId, category, cost, passportId, concertName, concertLocation, concertDate, isListed, isSecondarySaleStage);
+            address listedBy = address(0);
+            bool isListed = isTicketIdListed(ticket.ticketId);
+            Concert.Stage concertStage = concertContract.getConcertStage(ticket.concertId);
+            SecondaryMarketTicket memory newOwnedTicket = SecondaryMarketTicket(ticket, listedBy, isListed, concertStage);
             ticketDetailsArr[i] = newOwnedTicket;
         }
         return ticketDetailsArr;

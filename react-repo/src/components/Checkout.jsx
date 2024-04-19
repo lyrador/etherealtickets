@@ -17,19 +17,21 @@ import concertpic from '../images/concertOne.jpg'
 
 import { ethers } from "ethers";
 
+import Ticket from "../contracts/Ticket.json";
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
-import { SECONDARY_MARKETPLACE } from "../constants/Address";
+import { TICKET, SECONDARY_MARKETPLACE } from "../constants/Address";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
 const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
+const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
 
 const content = "This transaction is not refundable. Are you sure you want to proceed?";
 
 function Checkout() {
     const navigate = useNavigate();
     const { state } = useLocation();
-    const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate } = state; // Read values passed on state
+    const { ticketId, concertId, concertName, concertLoc, category, ticketCost, concertDate, seatNumber } = state; // Read values passed on state
 
     const [open, setOpen] = React.useState(false);
     const handleClickOpen = () => setOpen(true);
@@ -100,6 +102,7 @@ function Checkout() {
             await secondaryMarketplaceContract.buyTicket(ticketId, passportId, {
                 value: totalCostInWei,
             });
+            await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
             console.log("Success");
 
             // add timeout and refresh
@@ -164,6 +167,7 @@ function Checkout() {
                 category={category}
                 ticketCost={ticketCost}
                 concertDate={concertDate}
+                seatNumber={seatNumber}
             />
             <div>
                 <FinancialTable data={financials} />

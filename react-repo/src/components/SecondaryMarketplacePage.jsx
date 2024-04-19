@@ -14,7 +14,7 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import { ethers } from "ethers";
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
-import { SECONDARY_MARKETPLACE } from "../constants/Address";
+import { SECONDARY_MARKETPLACE, ORGANIZER } from "../constants/Address";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
@@ -33,6 +33,8 @@ function SecondaryMarketplacePage() {
   const handleOpenBackdrop = () => setOpenBackdrop(true);
   const handleCloseBackdrop = () => setOpenBackdrop(false);
 
+  const [isOwner, setIsOwner] = useState(false);
+
   const [filterModel, setFilterModel] = React.useState({
     items: [
       { field: 'concertName', operator: 'contains', value: "" },
@@ -50,6 +52,7 @@ function SecondaryMarketplacePage() {
     { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
     { field: 'listedBy', headerName: 'Listed By', flex: 1 },
     { field: 'concertDate', headerName: 'Concert Date', type: 'string', flex: 1 },
+    { field: 'seatNumber', headerName: 'Seat No.', flex: 1 },
     {
       field: 'buyButton', headerName: '', width: 150, disableClickEventBubbling: true,
       renderCell: (cellValue) => {
@@ -58,7 +61,7 @@ function SecondaryMarketplacePage() {
         const isNotListedByMe = (cellListedByString != currAccountString);
         return (
           <>
-            {isNotListedByMe && (<Button
+            {isNotListedByMe && !isOwner && (<Button
               variant="contained"
               onClick={() => {
                 console.log(cellValue.row.buyButton);
@@ -70,7 +73,8 @@ function SecondaryMarketplacePage() {
                     concertLoc: cellValue.row.concertLoc,
                     category: cellValue.row.category,
                     ticketCost: parseInt(cellValue.row.ticketCost),
-                    concertDate: cellValue.row.concertDate
+                    concertDate: cellValue.row.concertDate,
+                    seatNumber: cellValue.row.seatNumber
                   }
                 });
               }
@@ -100,16 +104,18 @@ function SecondaryMarketplacePage() {
     }
     console.log("getAllListedTicketDetailsArray");
     const listedTicketDetailsArr = rawListedTicketDetailsArr.map((ticket) => {
+      const ticketStruct = ticket.ticket;
       console.log(parseInt(ticket.ticketId));
       return {
-        id: parseInt(ticket.ticketId),
-        concertName: ticket.concertName,
-        concertId: parseInt(ticket.concertId),
-        concertLoc: ticket.concertLocation,
-        category: parseInt(ticket.category),
-        ticketCost: parseInt(ticket.cost),
-        concertDate: parseInt(ticket.concertDate),
+        id: parseInt(ticketStruct.ticketId),
+        concertName: ticketStruct.concertName,
+        concertId: parseInt(ticketStruct.concertId),
+        concertLoc: ticketStruct.concertLocation,
+        category: parseInt(ticketStruct.category),
+        ticketCost: parseInt(ticketStruct.cost),
+        concertDate: parseInt(ticketStruct.concertDate),
         listedBy: ticket.listedBy,
+        seatNumber: parseInt(ticketStruct.seatNumber),
         buyButton: 1
       };
     });
@@ -118,12 +124,20 @@ function SecondaryMarketplacePage() {
   };
 
   useEffect(() => {
+    getAccountOnLoad();
     fetchSecondaryMarketplaceListingsData();
   }, []);
 
   window.ethereum.on('accountsChanged', function (accounts) {
     window.location.reload(true);
   })
+
+  const getAccountOnLoad = async () => {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    setIsOwner(accounts[0] == ORGANIZER);
+  };
 
   return (
     <>
@@ -151,9 +165,9 @@ function SecondaryMarketplacePage() {
           })}
           style={{ width: 500, margin: 10 }}
         />
-        <Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
+        {!isOwner && (<Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
           List / Unlist My Tickets
-        </Button>
+        </Button>)}
         <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose}
           handleOpenBackdrop={handleOpenBackdrop} />
         <DataGrid

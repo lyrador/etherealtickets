@@ -36,12 +36,8 @@ export default function BasicModal({ open, handleOpen, handleClose, handleOpenBa
         { field: 'concertLoc', headerName: 'Concert Location', flex: 1 },
         { field: 'category', headerName: 'Category', width: 130 },
         { field: 'ticketCost', headerName: 'Ticket Cost (in ETH)', flex: 1 },
-        {
-            field: 'concertDate',
-            headerName: 'Concert Date',
-            type: 'string',
-            flex: 1,
-        },
+        { field: 'concertDate', headerName: 'Concert Date', type: 'string', flex: 1 },
+        { field: 'seatNumber', headerName: 'Seat No.', flex: 1 },
         {
             field: 'listButton', headerName: '', width: 150, disableClickEventBubbling: true,
             renderCell: (cellValue) => {
@@ -113,18 +109,21 @@ export default function BasicModal({ open, handleOpen, handleClose, handleOpenBa
         const rawOwnedTicketDetailsArr = await secondaryMarketplaceContract.getOwnedTicketDetailsArray();
 
         console.log("fetchOwnedTicketsData");
+        console.log(rawOwnedTicketDetailsArr);
         const ownedTicketDetailsArr = rawOwnedTicketDetailsArr.map((ticket) => {
-            console.log(parseInt(ticket.ticketId));
+            const ticketStruct = ticket.ticket;
+            console.log(parseInt(ticketStruct.ticketId));
             return {
-                id: parseInt(ticket.ticketId),
-                concertId: parseInt(ticket.concertId),
-                concertName: ticket.concertName,
-                concertLoc: ticket.concertLocation,
-                category: parseInt(ticket.category),
-                ticketCost: parseInt(ticket.cost),
-                concertDate: parseInt(ticket.concertDate),
+                id: parseInt(ticketStruct.ticketId),
+                concertId: parseInt(ticketStruct.concertId),
+                concertName: ticketStruct.concertName,
+                concertLoc: ticketStruct.concertLocation,
+                category: parseInt(ticketStruct.category),
+                ticketCost: parseInt(ticketStruct.cost),
+                concertDate: parseInt(ticketStruct.concertDate),
                 isListed: ticket.isListed,
-                isSecondarySaleStage: ticket.isSecondarySaleStage,
+                isSecondarySaleStage: ticket.concertStage == 2,
+                seatNumber: parseInt(ticketStruct.seatNumber),
                 buyButton: 1
             };
         });
