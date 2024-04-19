@@ -163,30 +163,6 @@ async function main() {
     .buyTicket(4, [1, 2], ["S1234567A", "S1234567B"], { value: SIX_ETH });
 
   await concert.updateConcertStage(4);
-
-  // preload ticket data
-
-  // // ------ Secondary Marketplace ------
-  const standardisedTicketCost = ONE_ETH;
-  // Concert 5:
-  await concert.createConcert(
-    "Bruno Mars Day 1",
-    "Indoor Stadium",
-    [ONE_ETH],
-    [1],
-    5,
-    5
-  );
-  await concert.updateConcertStage(5); //update to primary_sale
-  await marketplace.connect(addr1).joinQueue(5);
-  await marketplace.connect(addr1).buyTicket(5, [1], ["S1234567A"], {value: standardisedTicketCost});
-  await ticket.connect(addr1).setApprovalForAll(secondaryMarketPlace, true);
-  await concert.updateConcertStage(5); //update to secondary_sale
-  await secondaryMarketPlace.createSecondaryMarketplace(5);
-  //await concert.updateConcertStage(5);
-  //await secondaryMarketPlace.connect(addr1).listTicket(4, "S1234567A");
-  //await ticket.connect(addr1).setApprovalForAll(secondaryMarketPlace, true);
-  //await ticket.connect(addr1).setApprovalForAll(secondaryMarketplaceAddr, true);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

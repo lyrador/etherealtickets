@@ -8,7 +8,7 @@ const NavBar = () => {
   const location = useLocation();
 
   return (
-    <div className="center">
+    <div className="center" >
       <Nav variant="pills" activeKey={location.pathname}>
         <Nav.Item>
           <Nav.Link href="/">Home</Nav.Link>

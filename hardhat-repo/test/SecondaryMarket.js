@@ -111,7 +111,9 @@ describe("SecondaryMarketplace", function () {
             ).to.equal(stages.SECONDARY_SALE); 
     
             // Verify that secondary marketplace can be created successfully
-            await secondaryMarketContract.createSecondaryMarketplace(1);
+            await expect(secondaryMarketContract.createSecondaryMarketplace(1))
+                .to.emit(secondaryMarketContract, "SecondaryMarketplaceCreated")
+                .withArgs(1);
         });
         
         it("Should fail to create secondary market if secondary marketplace not open", async function () {
@@ -353,7 +355,7 @@ describe("SecondaryMarketplace", function () {
     
             // Case where buy transaction is successful
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
-            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, {value: TWO_ETH});
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
     
             const approvalTxReceipt = await approvalTx.wait();
             const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
@@ -396,7 +398,7 @@ describe("SecondaryMarketplace", function () {
     
             // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
-            let buy = secondaryMarketContract.connect(addr2).buyTicket(1, {value: ONE_ETH});
+            let buy = secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: ONE_ETH});
     
             await expect(buy).to.be.revertedWith(
                 "Insufficient amount to buy"
@@ -415,7 +417,7 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket on secondary marketplace if stage not SECONDARY_SALE
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr2).buyTicket(1)
+                secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z")
             ).to.be.revertedWith("Marketplace not open");
         });
 
@@ -441,7 +443,7 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket if ticketId not valid
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr2).buyTicket(9999)
+                secondaryMarketContract.connect(addr2).buyTicket(9999, "S1122334Z")
             ).to.be.revertedWithCustomError(ticketContract, "ERC721NonexistentToken");
         });
 
@@ -466,8 +468,78 @@ describe("SecondaryMarketplace", function () {
             // Verify that cannot buy ticket if owner is buying his/her own listed ticket
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             await expect(
-                secondaryMarketContract.connect(addr1).buyTicket(1)
+                secondaryMarketContract.connect(addr1).buyTicket(1, "S1122334Z")
             ).to.be.revertedWith("Owner cannot buy own listed ticket");
+        });
+    });
+
+    describe("Wtihdraw Balance", function () {
+        it("Should withdraw balance", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                ticketContract,
+                secondaryMarketContract,
+                owner,
+                addr1,
+                addr2
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // List ticket from address 1, who has previously bought ticket
+            await secondaryMarketContract.connect(addr1).listTicket(1);
+    
+            const initialSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(initialSecondaryMarketBal).to.equal(0);
+    
+            // Case where buy transaction is successful
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
+    
+            // Check the balance of the contract after receiving Ether (before withdraw)
+            const secondaryMarketBalBeforeWithdraw = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(secondaryMarketBalBeforeWithdraw).to.equal(1000);
+
+            expect(await secondaryMarketContract.connect(owner).withdrawAll())
+                .to.emit(secondaryMarketContract, "WithdrawBalance")
+                .withArgs(owner, 1000);
+
+            // Check the balance of the contract after withdraw
+            const secondaryMarketBalAfterWithdraw = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(secondaryMarketBalAfterWithdraw).to.equal(0);
+        });
+
+        it("Should fail to withdraw balance if called by non-owner", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                ticketContract,
+                secondaryMarketContract,
+                addr1,
+                addr2
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // List ticket from address 1, who has previously bought ticket
+            await secondaryMarketContract.connect(addr1).listTicket(1);
+    
+            // Case where buy transaction is successful
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
+
+            await expect(
+                secondaryMarketContract.connect(addr1).withdrawAll()
+            ).to.be.revertedWith("Not owner of secondaryMarketplace contract");
         });
     });
 });

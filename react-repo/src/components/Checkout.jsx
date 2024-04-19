@@ -8,7 +8,7 @@ import PurchaseAlertDialog from "./PurchaseAlertDialog";
 import TicketPurchaseCard from "./TicketPurchaseCard";
 import FinancialTable from './FinancialTable';
 
-import { Button, Backdrop, CircularProgress } from '@mui/material';
+import { Button, Backdrop, CircularProgress, Alert, Snackbar, TextField } from '@mui/material';
 
 import swift from '../images/swift-eras.jpg';
 import bruno from '../images/bruno.jpg';
@@ -19,8 +19,6 @@ import { ethers } from "ethers";
 
 import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
 import { SECONDARY_MARKETPLACE } from "../constants/Address";
-
-const oneEth = 1000000000000000000;
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
@@ -41,8 +39,14 @@ function Checkout() {
     const handleOpenBackdrop = () => setOpenBackdrop(true);
     const handleCloseBackdrop = () => setOpenBackdrop(false);
 
+    const [openAlert, setOpenAlert] = React.useState(false);
+    const handleOpenAlert = () => setOpenAlert(true);
+    const handleCloseAlert = () => setOpenAlert(false);
+
     const [balance, setBalance] = useState('0');
     const [buyingCommission, setBuyingComission] = useState(0);
+
+    const [passportId, setPassportId] = useState("");
 
     // Function to get the balance of the current account
     const getBalance = async (provider, account) => {
@@ -73,6 +77,10 @@ function Checkout() {
     // Function to purchase
     const purchase = async () => {
         try {
+            if (passportId == "") {
+                setOpenAlert(true);
+                return;
+            }
             console.log("Ticket Cost: ")
             console.log(ticketCost);
 
@@ -89,7 +97,7 @@ function Checkout() {
             console.log(parseInt(totalCostInWei));
 
             console.log("Buy Result: ")
-            await secondaryMarketplaceContract.buyTicket(ticketId, {
+            await secondaryMarketplaceContract.buyTicket(ticketId, passportId, {
                 value: totalCostInWei,
             });
             console.log("Success");
@@ -104,18 +112,18 @@ function Checkout() {
             console.log(err);
         }
     };
-    
+
     const setBuyingComissionFunc = async () => {
         try {
             console.log("Buying Commission: ")
             const buyingCommissionVal = await secondaryMarketplaceContract.getBuyingCommission();
-            setBuyingComission(buyingCommissionVal)
+            setBuyingComission(buyingCommissionVal);
             console.log(buyingCommissionVal);
             console.log("Buying commission set successfully")
         } catch (err) {
             console.log(err);
         }
-    }; 
+    };
 
     useEffect(() => {
         if (concertName.includes("Sheeran")) {
@@ -133,7 +141,7 @@ function Checkout() {
 
     // Assuming you have a data structure for the financials like this:
     const financials = {
-        balanceEth: Number(balance) ,
+        balanceEth: Number(balance),
         ticketCostWei: ticketCost,
         numberOfTickets: 1,
         commissionFeeWei: buyingCommission,
@@ -160,17 +168,25 @@ function Checkout() {
             <div>
                 <FinancialTable data={financials} />
             </div>
-            <Button variant="contained" color="error" onClick={() => navigate(-1)}>Cancel checkout and return</Button>
-            <>
-                <Button variant="contained" onClick={() => purchase()}>
+            <div style={{ flexDirection: 'column' }}>
+                <Button variant="contained" color="error" style={{ margin: 20, float: 'left' }} onClick={() => navigate(-1)}>Cancel checkout and return</Button>
+                <Button variant="contained" style={{ width: 150, margin: 20, float: 'right' }} onClick={() => purchase()}>
                     Proceed
                 </Button>
-                <PurchaseAlertDialog open={open} handleClose={handleClose} content={content} />
-            </>
+                <TextField style={{ width: 250, margin: 10, float: 'right' }}
+                    placeholder="Enter passportId..."
+                    onChange={(e) => setPassportId(e.target.value)}
+                />
+            </div>
+            <Snackbar open={openAlert} autoHideDuration={5000} onClose={handleCloseAlert}>
+                <Alert onClose={handleCloseAlert} severity="error" variant="filled" sx={{ width: '100%' }}>
+                    Error: PassportId cannot be empty!
+                </Alert>
+            </Snackbar>
             <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
-          <CircularProgress color="inherit" />
-          &nbsp; &nbsp; Wait a moment...
-        </Backdrop>
+                <CircularProgress color="inherit" />
+                &nbsp; &nbsp; Wait a moment...
+            </Backdrop>
         </>
     );
 }
