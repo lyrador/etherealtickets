@@ -53,6 +53,9 @@ function AllConcerts() {
 
     const handleAccountsChanged = (accounts) => {
         setIsOwner(accounts[0] == ORGANIZER);
+        if (accounts[0] != ORGANIZER) {
+            navigate('/');
+        }
     };
 
     useEffect(() => {
@@ -210,7 +213,7 @@ function AllConcerts() {
             <Header />
             <NavBar />
             <div style={{ margin: '2% 3% 3% 3%' }}>
-                <h2>Concert Management</h2>
+                <h2>Concert Initialization</h2>
                 <Form>
                     <Form.Group className="mb-3">
                         <Form.Label>Name</Form.Label>

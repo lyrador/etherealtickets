@@ -12,8 +12,8 @@ function App() {
     <div>
       <Routes>
         {/* <Route exact path="/" element={<Header />} /> */}
-        <Route path="/" element={<AllConcerts />} />
-        <Route path="/marketplace" element={<MarketplacePage />} />
+        <Route path="/concerts" element={<AllConcerts />} />
+        <Route path="/" element={<MarketplacePage />} />
         <Route path="/marketplace/:id" element={<Seats />} />
         <Route
           path="/secondary-marketplace"
