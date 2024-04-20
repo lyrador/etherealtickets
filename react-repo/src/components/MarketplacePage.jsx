@@ -95,6 +95,7 @@ function MarketplacePage() {
   };
 
   const handleAccountsChanged = (accounts) => {
+    window.location.reload();
     setIsOwner(accounts[0] == ORGANIZER);
   };
 

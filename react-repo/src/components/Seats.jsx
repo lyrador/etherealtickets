@@ -126,7 +126,7 @@ function Seats() {
     const seatObj = {};
     seatObj["seatNum"] = seatNum;
     seatObj["cost"] = ethers.utils.formatEther(seatCost);
-    seatObj["category"] = seatCategory + 1;
+    seatObj["category"] = parseInt(seatCategory);
     setSelectedSeats([...selectedSeats, seatObj]);
   };
 
@@ -155,7 +155,7 @@ function Seats() {
       handleOpenAlert("success", `Success! Transaction Hash: ${transaction1.hash}`);
       setTimeout(() => {
         handleCloseBackdrop();
-        navigate('/marketplace');
+        navigate('/');
       }, 2000);
     } catch (err) {
       handleCloseBackdrop();

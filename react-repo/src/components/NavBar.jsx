@@ -1,20 +1,34 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import Nav from "react-bootstrap/Nav";
 import { useLocation } from "react-router-dom";
 
+import { ORGANIZER } from "../constants/Address";
+import { ethers } from "ethers";
+
 const NavBar = () => {
   const location = useLocation();
+
+  const [isOwner, setIsOwner] = useState(false);
+
+  const getAccountOnLoad = async () => {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts"  });
+    setIsOwner(accounts[0] == ORGANIZER);
+  };
+
+  useEffect(() => {
+    getAccountOnLoad();
+  }, []);
 
   return (
     <div className="center" >
       <Nav variant="pills" activeKey={location.pathname}>
+        {isOwner && (<Nav.Item>
+          <Nav.Link href="/concerts">Concert Initialization</Nav.Link>
+        </Nav.Item>)}
         <Nav.Item>
-          <Nav.Link href="/">Home</Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link href="/marketplace">Marketplace</Nav.Link>
+          <Nav.Link href="/">Marketplace</Nav.Link>
         </Nav.Item>
         <Nav.Item>
           <Nav.Link href="/secondary-marketplace">
