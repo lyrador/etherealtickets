@@ -10,7 +10,7 @@ const fse = require("fs-extra");
 let secondaryMarketplaceAddr = "";
 
 const BUY_COMMISSION_SECONDARY_MKT = 500; //wei
-const SELL_COMMISSION_SECONDARY_MKT = 500 //wei
+const SELL_COMMISSION_SECONDARY_MKT = 500; //wei
 
 async function updateAddressFile(
   concertAddress,
@@ -75,7 +75,13 @@ async function main() {
   await marketplace.waitForDeployment();
   const secondaryMarketPlace = await hre.ethers.deployContract(
     "SecondaryMarketplace",
-    [concert.target, ticket.target, marketplace.target, BUY_COMMISSION_SECONDARY_MKT, SELL_COMMISSION_SECONDARY_MKT]
+    [
+      concert.target,
+      ticket.target,
+      marketplace.target,
+      BUY_COMMISSION_SECONDARY_MKT,
+      SELL_COMMISSION_SECONDARY_MKT,
+    ]
   );
   await secondaryMarketPlace.waitForDeployment();
 
@@ -106,17 +112,8 @@ async function main() {
   const SIX_ETH = ethers.parseEther("6.0");
 
   // preload concert data
-  // Concert 1: Stage = INITIALIZATION
-  await concert.createConcert(
-    "Coldplay",
-    "National Stadium",
-    [THREE_ETH, TWO_ETH, ONE_ETH],
-    [10, 20, 30],
-    1,
-    1
-  );
 
-  // Concert 2: Stage = PRIMARY_SALE
+  // Concert 1: Stage = PRIMARY_SALE
   await concert.createConcert(
     "Ed Sheeran",
     "National Stadium",
@@ -127,7 +124,7 @@ async function main() {
   );
   await concert.updateConcertStage(2);
 
-  // Concert 3: Stage = SECONDARY_SALE
+  // Concert 2: Stage = SECONDARY_SALE
   await concert.createConcert(
     "Taylor Swift",
     "National Stadium",
@@ -138,26 +135,6 @@ async function main() {
   );
   await concert.updateConcertStage(3);
   await concert.updateConcertStage(3);
-
-  // Concert 4: Stage = OPEN
-  await concert.createConcert(
-    "Bruno Mars",
-    "National Stadium",
-    [THREE_ETH, TWO_ETH, ONE_ETH],
-    [10, 20, 30],
-    4,
-    4
-  );
-  await concert.updateConcertStage(4);
-  await concert.updateConcertStage(4);
-
-  // Ticket 1 and 4
-  await marketplace.connect(addr1).joinQueue(4);
-  await marketplace
-    .connect(addr1)
-    .buyTicket(4, [1, 2], ["S1234567A", "S1234567B"], { value: SIX_ETH });
-
-  await concert.updateConcertStage(4);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
