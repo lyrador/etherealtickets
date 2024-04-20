@@ -167,7 +167,7 @@ contract Concert {
                 break; // found the category, exit the loop
             }
         }
-        return category; 
+        return category + 1; 
     }
     
     //getting the total number of tickets in the concert

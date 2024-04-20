@@ -74,11 +74,6 @@ contract Ticket is ERC721 {
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false, seatNumber);
     }
 
-    // modifier onlyTicketOwner(uint256 ticketId) {
-    //     require(msg.sender == ownerOf(ticketId), "Caller is not the ticket owner"); 
-    //     _; 
-    // }
-
     modifier validConcert(uint256 concertId) {
         require(concertContract.isValidConcert(concertId), "Invalid concert id");
         _;

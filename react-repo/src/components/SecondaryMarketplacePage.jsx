@@ -25,6 +25,8 @@ function SecondaryMarketplacePage() {
 
   const [currAccount, setCurrAccount] = React.useState('');
   const [secondaryMarketBalance, setSecondaryMarketBalance] = React.useState('');
+  const [buyingCommission, setBuyingCommission] = React.useState(0);
+  const [sellingCommission, setSellingCommission] = React.useState(0);
 
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
@@ -134,9 +136,31 @@ function SecondaryMarketplacePage() {
     setTableRows(listedTicketDetailsArr);
   };
 
+  const fetchCommissionFees = async () => {
+    if (window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts[0] == ORGANIZER) {
+          const buyComm = await secondaryMarketplaceContract.getBuyingCommission();
+          const sellComm = await secondaryMarketplaceContract.getSellingCommission();
+          console.log("Fees");
+          console.log(parseInt(buyComm));
+          console.log(parseInt(sellComm));
+          setBuyingCommission(parseInt(buyComm));
+          setSellingCommission(parseInt(sellComm));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      console.log('MetaMask is not installed');
+    }
+  };
+
   useEffect(() => {
     getAccountOnLoad();
     fetchSecondaryMarketplaceListingsData();
+    fetchCommissionFees();
   }, []);
 
   window.ethereum.on('accountsChanged', function (accounts) {
@@ -154,7 +178,7 @@ function SecondaryMarketplacePage() {
     }
   };
 
-  // Function to purchase
+  // Function to withdraw balance
   const withdrawBalance = async () => {
     try {
       handleOpenBackdrop();
@@ -168,6 +192,44 @@ function SecondaryMarketplacePage() {
       handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
 
       setSecondaryMarketBalance(0);
+    } catch (err) {
+      console.log(err);
+    }
+    handleCloseBackdrop();
+  };
+
+  // Function to purchase
+  const updateBuyingCommission = async () => {
+    try {
+      const comm = parseInt(buyingCommission);
+      handleOpenBackdrop();
+      console.log("Withdraw Balance: ")
+      const transaction = await secondaryMarketplaceContract.updateBuyingCommission(comm);
+      const receipt = await transaction.wait();
+
+      console.log("Success");
+      console.log(transaction);
+
+      handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
+    } catch (err) {
+      console.log(err);
+    }
+    handleCloseBackdrop();
+  };
+
+   // Function to purchase
+   const updateSellingCommission = async () => {
+    try {
+      const comm = parseInt(sellingCommission);
+      handleOpenBackdrop();
+      console.log("Withdraw Balance: ")
+      const transaction = await secondaryMarketplaceContract.updateSellingCommission(comm);
+      const receipt = await transaction.wait();
+
+      console.log("Success");
+      console.log(transaction);
+
+      handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
     } catch (err) {
       console.log(err);
     }
@@ -238,6 +300,30 @@ function SecondaryMarketplacePage() {
             filterModel={filterModel}
             onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
           />
+          {isOwner && <>
+            Selling Commission in wei:
+            <TextField
+              onChange={(e) => setSellingCommission(e.target.value)}
+              style={{ width: 250, margin: 10 }}
+              value={sellingCommission}
+            />
+            <Button onClick={() => updateSellingCommission()} style={{ margin: 20 }}>
+              Update
+            </Button>
+          </>
+          }
+          {isOwner && <>
+            Buying Commission in wei:
+            <TextField
+              onChange={(e) => setBuyingCommission(e.target.value)}
+              style={{ width: 250, margin: 10 }}
+              value={buyingCommission}
+            />
+            <Button onClick={() => updateBuyingCommission()} style={{ margin: 20 }}>
+              Update
+            </Button>
+          </>
+          }
         </div>
         <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
           <CircularProgress color="inherit" />
