@@ -149,6 +149,36 @@ describe("Concert", function () {
     expect(updatedSalesDate).to.equal(4);
   });
 
+  //Testing for when updating, the mismatched length for ticket cost and seat number
+  it("Should revert when trying to update a concert with mismatched ticket costs and seat numbers lengths", async function () {
+    const { concertContract, owner } = await loadFixture(deployFixture);
+
+    // Setup - Create a concert with equal lengths of ticket costs and seat numbers
+    await concertContract.createConcert(
+      "Initial Concert",
+      "Initial Location",
+      [100, 200, 300],
+      [10, 20, 30],
+      20240101,
+      20240102
+    );
+
+    const concertId = 1; // Assuming ID is known and the concert is at INITIALIZATION stage
+
+    // Update attempt with mismatched lengths
+    await expect(
+      concertContract.updateConcert(
+        concertId,
+        "Updated Concert",
+        "Updated Location",
+        [150, 250], // Mismatched lengths
+        [15, 25, 35],
+        20250101,
+        20250102
+      )
+    ).to.be.revertedWith("Ticket costs and seat numbers must match in length");
+  });
+
   // Test for deleting a concert and checking whether it exists or not
   it("Should confirm that a concert no longer exists after deletion", async function () {
     const { concertContract } = await loadFixture(deployFixture);

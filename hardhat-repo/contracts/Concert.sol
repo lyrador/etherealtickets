@@ -79,6 +79,9 @@ contract Concert {
     ) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
         require(concerts[concertId].stage == Stage.INITIALIZATION, "Concert can only be updated at INITIALIZATION stage");
+        require(_ticketCost.length != 0,"ticketCost array cannot be empty");
+        require(_categorySeatNumber.length != 0,"categorySeatNumber array cannot be empty");
+        require(_ticketCost.length == _categorySeatNumber.length, "Ticket costs and seat numbers must match in length");
         concerts[concertId].name = _name;
         concerts[concertId].location = _location;
         concerts[concertId].ticketCost = _ticketCost;

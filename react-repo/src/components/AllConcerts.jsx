@@ -73,6 +73,18 @@ function AllConcerts() {
         fetchConcertDetails();
     }, []); 
 
+    const parseErrorMessage = (error) => {
+        let errorMessage = "An unknown error occurred";
+        if (error && error.error && error.error.data && error.error.data.message) {
+            errorMessage = error.error.data.message;
+        } else if (error && error.data && error.data.message) {
+            errorMessage = error.data.message;
+        } else if (error && error.message) {
+            errorMessage = error.message;
+        }
+        return errorMessage.replace(/(error: )|(")/gi, ""); // Clean up any additional text or quotes
+    };
+
     const handleCreateConcert = async () => {
         const ticketCostArray = ticketCosts.split(",").map(cost => ethers.utils.parseEther(cost.trim()));
         const seatNumberArray = seatNumbers.split(",").map(num => parseInt(num.trim()));
@@ -99,8 +111,7 @@ function AllConcerts() {
             setDateNumber('');
             setSalesDate('');
         } catch (error) {
-            console.error('Error creating concert:', error);
-            alert(`Failed to create concert: ${error.message}`);
+            alert(parseErrorMessage(error));
         }
     };
     
@@ -135,17 +146,16 @@ function AllConcerts() {
             setDateNumber('');
             setSalesDate('');
         } catch (error) {
-            console.error('Error updating concert:', error);
-            alert(`Failed to update concert: ${error.message}`);
-        }
+            alert(parseErrorMessage(error));
+        } 
     };
 
     const startUpdate = (concert) => {
         setCurrentConcert(concert);
         setName(concert[1]);
         setLocation(concert[2]);
-        setTicketCosts(concert[4].replace(" ETH", "").split(", ").join(","));
-        setSeatNumbers(concert[3].split(", ").join(","));
+        const cleanedTicketCosts = concert[4].replace(/ ETH/g, '').trim(); 
+        setTicketCosts(cleanedTicketCosts);        setSeatNumbers(concert[3].split(", ").join(","));
         setDateNumber(concert[5]);
         setSalesDate(concert[6]);  
     };
@@ -161,8 +171,7 @@ function AllConcerts() {
             setConcerts(updatedConcerts);
     
         } catch (error) {
-            console.error('Failed to delete concert:', error);
-            alert('Failed to delete concert: ' + error.message);
+            alert(parseErrorMessage(error));
         }
     };
 
@@ -214,7 +223,7 @@ function AllConcerts() {
                          <th>Concert Date</th>
                          <th>Sales Date</th>
                          <th>Stage</th>
-                         <th>Edit</th>
+                         <th>Update</th>
                          <th>Delete</th>
                     </tr>
                 </thead>
@@ -230,7 +239,7 @@ function AllConcerts() {
                         <td>{concert[6]}</td>
                         <td>{concert[7]}</td>
                         <td>
-                            <Button onClick={() => startUpdate(concert)}>Edit</Button>
+                            <Button onClick={() => startUpdate(concert)}>Update</Button>
                         </td>
                         <td>
                             <Button variant="danger" onClick={() => handleDeleteConcert(concert[0])}>Delete</Button>
