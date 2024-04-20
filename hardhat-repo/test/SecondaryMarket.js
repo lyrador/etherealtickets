@@ -4,6 +4,8 @@ const BigNumber = require("bignumber.js");
 
 const ONE_ETH = ethers.parseEther("1.0");
 const TWO_ETH = ethers.parseEther("2.0");
+const BUY_COMMISSION_SECONDARY_MKT = 500; //wei
+const SELL_COMMISSION_SECONDARY_MKT = 500 //wei
 
 describe("SecondaryMarketplace", function () {
     // Stage enum numeric values => 0: INITIALIZATION, 1: PRIMARY_SALE, 2: SECONDARY_SALE, 3: OPEN, 4: COMPLETED
@@ -35,7 +37,9 @@ describe("SecondaryMarketplace", function () {
         const secondaryMarketContract = await ethers.deployContract("SecondaryMarketplace", [
             concertContract.target,
             ticketContract.target,
-            primaryMarketContract.target
+            primaryMarketContract.target,
+            BUY_COMMISSION_SECONDARY_MKT,
+            SELL_COMMISSION_SECONDARY_MKT
         ]);
 
         // Return contracts and accounts to be used for tests
@@ -53,7 +57,7 @@ describe("SecondaryMarketplace", function () {
         await createTestConcertFixture(concertContract);
 
         // Verify that concertContract is created correctly at initialization stage
-        expect(await concertContract.getConcertID(1)).to.equal(1);
+        expect(await concertContract.getConcertId(1)).to.equal(1);
         expect(await concertContract.getConcertStage(1)).to.equal(stages.INITIALIZATION);
         expect((await concertContract.getSeatCost(1, 1))).to.equal(ONE_ETH);
 
@@ -539,7 +543,7 @@ describe("SecondaryMarketplace", function () {
 
             await expect(
                 secondaryMarketContract.connect(addr1).withdrawAll()
-            ).to.be.revertedWith("Not owner of secondaryMarketplace contract");
+            ).to.be.revertedWith("Not owner of SecondaryMarketplace contract");
         });
     });
 });

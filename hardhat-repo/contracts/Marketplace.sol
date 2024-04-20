@@ -11,7 +11,6 @@ contract Marketplace {
     uint256 ticketId; // tokenId of NFT
     Concert concertContract;
     Ticket ticketContract;
-    //address[] queue;
 
     mapping(uint256 => mapping(address => bool)) hasQueued;
     mapping(uint256 => mapping(uint256 => address)) seatTaken;
@@ -33,14 +32,12 @@ contract Marketplace {
         require(concertContract.isValidConcert(concertId), "Invalid concert id");
         _;
     }
-
     
     modifier primaryMarketplaceOpen(uint256 concertId) {
         require(concertContract.getConcertStage(concertId) == Concert.Stage.PRIMARY_SALE 
         || concertContract.getConcertStage(concertId) == Concert.Stage.SECONDARY_SALE, "Primary marketplace is closed");
         _;
     }
-
 
     function joinQueue(uint256 concertId) public validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer has not queued
@@ -49,7 +46,7 @@ contract Marketplace {
         hasQueued[concertId][msg.sender] = true;
     }
 
-    function buyTicket(uint256 concertId, uint24[] memory seatNumbers, 
+    function buyTicket(uint256 concertId, uint256[] memory seatNumbers, 
         string[] memory passportIds) public payable validConcert(concertId) primaryMarketplaceOpen(concertId) {
         // Buyer is at the front of the queue
         require(msg.sender == concertQueues[concertId][0], "Buyer not at the front of the queue");
@@ -67,26 +64,24 @@ contract Marketplace {
             require(seatTaken[concertId][seatNumbers[i]] == address(0), "Seat is taken");
 
             // Pull category and cost for the seat
-            uint24 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
+            uint256 category = concertContract.getSeatCategory(concertId, seatNumbers[i]);
             uint256 cost = concertContract.getSeatCost(concertId, seatNumbers[i]);
 
             amtToPay += cost;
         }
-
-        console.log("Amount: %s", amtToPay);
 
         // Eth sent is enough
         require(msg.value >= amtToPay, "Insufficient eth sent");
 
         for (uint i = 0; i < seatNumbers.length; i++) {
             // Update seat status
-            uint24 seatNumber = seatNumbers[i];
+            uint256 seatNumber = seatNumbers[i];
             seatTaken[concertId][seatNumber] = msg.sender;
             seatsTaken[concertId].push(seatNumber);
             // Mint NFT
             ticketId++;
             // Create ticket object
-            uint24 category = concertContract.getSeatCategory(concertId, seatNumber);
+            uint256 category = concertContract.getSeatCategory(concertId, seatNumber);
             uint256 cost = concertContract.getSeatCost(concertId, seatNumber);
             string memory passportId = passportIds[i];
             ticketContract.createTicket(ticketId, concertId, msg.sender, category, cost, passportId, false, seatNumber); 
@@ -99,7 +94,6 @@ contract Marketplace {
             newQueue[i - 1] = queue[i]; // Assign queue elements to newQueue
         }
         concertQueues[concertId] = newQueue;
-
     }
 
     function withdraw() public onlyOwner {
@@ -131,5 +125,4 @@ contract Marketplace {
 
         return 0;
     }
-
 }

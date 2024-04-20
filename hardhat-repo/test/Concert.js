@@ -280,16 +280,16 @@ describe("Concert", function () {
     expect(costForSeat101).to.equal(TWO_ETH);
   });
 
-  //test for getConcertID
+  //test for getConcertId
   it("Should return the same concert ID if the concert exists", async function () {
     const { concertContract } = await loadFixture(deployFixture);
     await joinQueueFixture(concertContract);
 
     // Check that the function returns the correct concert ID for an existing concert
-    const concertIdForDay1 = await concertContract.getConcertID(1);
+    const concertIdForDay1 = await concertContract.getConcertId(1);
     expect(concertIdForDay1).to.equal(1);
 
-    const concertIdForDay2 = await concertContract.getConcertID(2);
+    const concertIdForDay2 = await concertContract.getConcertId(2);
     expect(concertIdForDay2).to.equal(2);
   });
 

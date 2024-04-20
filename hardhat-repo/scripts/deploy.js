@@ -9,6 +9,9 @@ const fs = require("fs");
 const fse = require("fs-extra");
 let secondaryMarketplaceAddr = "";
 
+const BUY_COMMISSION_SECONDARY_MKT = 500; //wei
+const SELL_COMMISSION_SECONDARY_MKT = 500 //wei
+
 async function updateAddressFile(
   concertAddress,
   ticketAddress,
@@ -72,7 +75,7 @@ async function main() {
   await marketplace.waitForDeployment();
   const secondaryMarketPlace = await hre.ethers.deployContract(
     "SecondaryMarketplace",
-    [concert.target, ticket.target, marketplace.target]
+    [concert.target, ticket.target, marketplace.target, BUY_COMMISSION_SECONDARY_MKT, SELL_COMMISSION_SECONDARY_MKT]
   );
   await secondaryMarketPlace.waitForDeployment();
 

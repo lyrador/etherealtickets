@@ -5,33 +5,24 @@ contract Concert {
 
     address public owner;
     uint256 public totalConcerts;
+    
+    mapping(uint256 => Concert) concerts; //mapping of concert id to the concerts 
 
-    enum Stage {
-        INITIALIZATION,
-        PRIMARY_SALE,
-        SECONDARY_SALE,
-        OPEN,
-        COMPLETED
-    }
+    enum Stage { INITIALIZATION, PRIMARY_SALE, SECONDARY_SALE, OPEN, COMPLETED }
 
     struct Concert {
-        uint256 id;
-        string name;
-        string location;
-        uint256[] ticketCost; // change it to wei
-        uint24[] categorySeatNumber;
-        uint concertDate;
-        uint salesDate;
-        Stage stage;
+        uint256 id;                    // 32 bytes, occupies full slot
+        uint256[] ticketCost;          // Dynamic array, starts in a new full slot
+        string name;                   // Dynamic array, starts in a new full slot
+        string location;               // Dynamic array, starts in a new full slot
+        uint256[] categorySeatNumber;  // Dynamic array, starts in a new full slot
+        uint64 concertDate;            // 8 bytes                                       \
+        uint64 salesDate;              // 8 bytes                                        ) // Total of 17 bytes in one slot
+        Stage stage;                   // 1 byte -> Stage enum only 5 possible values   /
     }
 
     constructor() {
         owner = msg.sender;
-    }
-
-    //getting the owner
-    function getOwner() public view returns (address) {
-        return owner;
     }
 
     modifier onlyOwner() {
@@ -39,17 +30,19 @@ contract Concert {
         _;
     }
 
-    //mapping of concert id to the concerts 
-    mapping(uint256 => Concert) concerts; 
+    //getting the owner
+    function getOwner() public view returns (address) {
+        return owner;
+    }
 
     //creating a concert
     function createConcert(
         string memory _name,
         string memory _location,
         uint256[] memory _ticketCost,
-        uint24[] memory _categorySeatNumber,
-        uint256 _concertDate,
-        uint256 _salesDate
+        uint256[] memory _categorySeatNumber,
+        uint64 _concertDate,
+        uint64 _salesDate
     ) public onlyOwner {
         require(_ticketCost.length != 0,"ticketCost array cannot be empty");
         require(_categorySeatNumber.length != 0,"categorySeatNumber array cannot be empty");
@@ -57,14 +50,14 @@ contract Concert {
         totalConcerts += 1; // Incremenets the totalconcertId;
         concerts[totalConcerts] = Concert(
             totalConcerts,
+            _ticketCost,
             _name,
             _location,
-            _ticketCost,
             _categorySeatNumber,
             _concertDate,
             _salesDate,
             Stage.INITIALIZATION
-            );
+        );
     }
     
     //updating the concert details
@@ -73,9 +66,9 @@ contract Concert {
         string memory _name,
         string memory _location,
         uint256[] memory _ticketCost,
-        uint24[] memory _categorySeatNumber,
-        uint256 _concertDate,
-        uint256 _salesDate
+        uint256[] memory _categorySeatNumber,
+        uint64 _concertDate,
+        uint64 _salesDate
     ) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
         require(concerts[concertId].stage == Stage.INITIALIZATION, "Concert can only be updated at INITIALIZATION stage");
@@ -92,9 +85,7 @@ contract Concert {
     }
 
     //updating the concert stage only
-    function updateConcertStage(
-        uint256 concertId
-    ) public onlyOwner {
+    function updateConcertStage(uint256 concertId) public onlyOwner {
         require(concerts[concertId].id != 0, "Concert does not exist");
         Stage nextStage = Stage(uint8(concerts[concertId].stage) + 1);
         // concert organizer manually updates stage
@@ -109,9 +100,9 @@ contract Concert {
     }
 
     //getting the concert id
-    function getConcertID(uint256 concertId) public view returns (uint256) {
-    require(concerts[concertId].id != 0, "Concert does not exist");
-    return concertId;
+    function getConcertId(uint256 concertId) public view returns (uint256) {
+        require(concerts[concertId].id != 0, "Concert does not exist");
+        return concertId;
     }
 
     //getting the name of the concert
@@ -130,29 +121,28 @@ contract Concert {
     }
 
     //getting the array fo the categorySeats
-    function getCategorySeatArray(uint256 concertId) public view returns (uint24[] memory) {
+    function getCategorySeatArray(uint256 concertId) public view returns (uint256[] memory) {
         return concerts[concertId].categorySeatNumber;
     }
 
     ///getting the concertDate of the concert
-    function getConcertDate(uint256 concertId) public view returns (uint) {
+    function getConcertDate(uint256 concertId) public view returns (uint64) {
         return concerts[concertId].concertDate;
     }
 
     //getting the salesDate of the concert
-    function getSalesDate(uint256 concertId) public view returns (uint) {
+    function getSalesDate(uint256 concertId) public view returns (uint64) {
         return concerts[concertId].salesDate;
     }
 
-
     //getting the cost of the seat by iterating through the categories
-    function getSeatCost(uint256 concertId, uint24 seatNumber) public view returns (uint256) {
+    function getSeatCost(uint256 concertId, uint256 seatNumber) public view returns (uint256) {
         require(concerts[concertId].id != 0, "Concert does not exist");
         require(seatNumber <= getTotalTickets(concertId), "Seat number is not available");
 
-        uint24 totalSeatsChecker = 0;
+        uint256 totalSeatsChecker = 0;
 
-        for (uint24 i = 0; i < concerts[concertId].categorySeatNumber.length; i++) {
+        for (uint256 i = 0; i < concerts[concertId].categorySeatNumber.length; i++) {
             totalSeatsChecker += concerts[concertId].categorySeatNumber[i];
 
             if (seatNumber <= totalSeatsChecker) {
@@ -162,14 +152,14 @@ contract Concert {
     }
 
     //getting the category of the seat
-    function getSeatCategory(uint256 concertId, uint24 seatNumber) public view returns (uint24) { 
+    function getSeatCategory(uint256 concertId, uint256 seatNumber) public view returns (uint256) { 
         require(concerts[concertId].id != 0, "Concert does not exist");
         require(seatNumber <= getTotalTickets(concertId), "Seat number is not available");
 
-        uint24 totalSeatsChecker = 0; 
-        uint24 category = 0;
+        uint256 totalSeatsChecker = 0; 
+        uint256 category = 0;
 
-        for (uint24 i = 0; i < concerts[concertId].categorySeatNumber.length; i++) {
+        for (uint256 i = 0; i < concerts[concertId].categorySeatNumber.length; i++) {
             totalSeatsChecker += concerts[concertId].categorySeatNumber[i];
         
             if (seatNumber <= totalSeatsChecker) {
@@ -179,13 +169,12 @@ contract Concert {
         }
         return category; 
     }
-
     
     //getting the total number of tickets in the concert
-    function getTotalTickets(uint256 concertId) public view returns (uint24) {
+    function getTotalTickets(uint256 concertId) public view returns (uint256) {
         require(concerts[concertId].id != 0, "Concert does not exist");
 
-        uint24 totalTickets = 0;
+        uint256 totalTickets = 0;
         uint256 numOfCategory = concerts[concertId].categorySeatNumber.length;
         for (uint256 i = 0; i < numOfCategory; i++) {
             totalTickets += concerts[concertId].categorySeatNumber[i];
@@ -195,7 +184,7 @@ contract Concert {
     }
 
     //getting the total number of tickets for each category 
-    function getTotalTicketsForCategory(uint256 concertID, uint256 categoryNumber) public view returns (uint24) {
+    function getTotalTicketsForCategory(uint256 concertID, uint256 categoryNumber) public view returns (uint256) {
         require(concerts[concertID].id != 0, "Concert does not exist");
         require(categoryNumber < concerts[concertID].categorySeatNumber.length, "Category index out of bounds");
         return concerts[concertID].categorySeatNumber[categoryNumber - 1];
@@ -206,7 +195,7 @@ contract Concert {
         return concerts[concertId].id != 0;
     }
 
-    function isValidSeat(uint256 concertId, uint24 seatNumber) public view returns (bool) {
+    function isValidSeat(uint256 concertId, uint256 seatNumber) public view returns (bool) {
         require(concerts[concertId].id != 0, "Concert does not exist");
         require(seatNumber <= getTotalTickets(concertId), "Seat does not exist");
 
@@ -214,27 +203,26 @@ contract Concert {
         return true;
     }
 
-
     //check concert stage
     function getConcertStage(uint256 concertId) public view returns (Stage) {
         return concerts[concertId].stage;
     }
 
     // get list of concerts by stage
-    function getConcertsByStage(uint stageInt) public view returns (Concert[] memory) {
+    function getConcertsByStage(uint8 stageInt) public view returns (Concert[] memory) {
         
         Stage stage = Stage(stageInt);
         
-        uint count = 0;
-        for (uint i = 1; i <= totalConcerts; i++) {
+        uint256 count = 0;
+        for (uint256 i = 1; i <= totalConcerts; i++) {
             if (concerts[i].stage == stage) {
                 count++;
             }
         }
 
         Concert[] memory requiredConcerts = new Concert[](count);
-        uint index = 0;
-        for (uint i = 1; i <= totalConcerts; i++) {
+        uint256 index = 0;
+        for (uint256 i = 1; i <= totalConcerts; i++) {
             if (concerts[i].stage == stage) {
                 requiredConcerts[index] = concerts[i];
                 index++;
