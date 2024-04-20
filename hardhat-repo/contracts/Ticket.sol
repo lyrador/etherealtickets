@@ -74,10 +74,10 @@ contract Ticket is ERC721 {
         emit TicketCreated(ticketId, concertId, buyer, category, cost, passportId, false, seatNumber);
     }
 
-    modifier onlyTicketOwner(uint256 ticketId) {
-        require(msg.sender == ownerOf(ticketId), "Caller is not the ticket owner"); 
-        _; 
-    }
+    // modifier onlyTicketOwner(uint256 ticketId) {
+    //     require(msg.sender == ownerOf(ticketId), "Caller is not the ticket owner"); 
+    //     _; 
+    // }
 
     modifier validConcert(uint256 concertId) {
         require(concertContract.isValidConcert(concertId), "Invalid concert id");
@@ -97,7 +97,6 @@ contract Ticket is ERC721 {
 
     function useTicketForConcert(uint256 concertId, uint256 ticketId, string memory passportId) 
         public 
-        onlyTicketOwner(ticketId) 
         validConcert(concertId) 
         onlyConcertOpen(concertId) 
         returns (bool) 
@@ -162,5 +161,27 @@ contract Ticket is ERC721 {
     function updateTicketPassportId(uint256 ticketId, string memory passportId) public {
         require(isValidTicket(ticketId));
         tickets[ticketId].passportId = passportId;
+    }
+
+    function getTicketsforOpenConcerts() public view returns (Ticket[] memory) {
+        uint openTicketCount = 0; 
+
+        // To determine number of tickets with Open concerts
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (concertContract.getConcertStage(tickets[i].concertId) == Concert.Stage.OPEN) {
+                openTicketCount++;
+            }
+        }
+
+        Ticket[] memory openTickets = new Ticket[](openTicketCount);
+        uint currentIndex = 0;
+
+        for (uint i = 1; i <= numOfTickets; i++) {
+            if (concertContract.getConcertStage(tickets[i].concertId) == Concert.Stage.OPEN) {
+                openTickets[currentIndex] = tickets[i];
+                currentIndex++;
+            }
+        }
+    return openTickets;
     }
 }
