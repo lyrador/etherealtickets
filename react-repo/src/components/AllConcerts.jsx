@@ -54,7 +54,7 @@ function AllConcerts() {
     const handleAccountsChanged = (accounts) => {
         setIsOwner(accounts[0] == ORGANIZER);
         if (accounts[0] != ORGANIZER) {
-            navigate('/marketplace');
+            navigate('/');
         }
     };
 
