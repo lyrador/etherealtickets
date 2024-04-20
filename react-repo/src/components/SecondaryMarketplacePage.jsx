@@ -5,10 +5,10 @@ import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
 import Header from "./Header";
 import ListedTicketsModal from "./ListedTicketsModal";
+import SnackbarAlert from "./SnackbarAlert";
 
 import { DataGrid } from '@mui/x-data-grid';
 import { Button, InputAdornment, TextField, CircularProgress, Backdrop } from '@mui/material';
-import PurchaseAlertDialog from "./PurchaseAlertDialog";
 
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -32,6 +32,16 @@ function SecondaryMarketplacePage() {
   const [openBackdrop, setOpenBackdrop] = React.useState(false);
   const handleOpenBackdrop = () => setOpenBackdrop(true);
   const handleCloseBackdrop = () => setOpenBackdrop(false);
+
+  const [openAlert, setOpenAlert] = React.useState(false);
+  const [alertType, setAlertType] = useState("success");
+  const [alertMessage, setAlertMessage] = useState("");
+  const handleOpenAlert = (type, message) => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setOpenAlert(true);
+  }
+  const handleCloseAlert = () => setOpenAlert(false);
 
   const [isOwner, setIsOwner] = useState(false);
 
@@ -143,50 +153,53 @@ function SecondaryMarketplacePage() {
     <>
       <Header />
       <NavBar />
-      <h2>Secondary Marketplace</h2>
-      <div style={{ height: 400, width: '100%' }}>
-        <TextField
-          placeholder="Search for concert..."
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          onChange={(e) => setFilterModel({
-            items: [
-              {
-                field: 'concertName',
-                operator: 'contains',
-                value: e.target.value,
+      <div style={{ margin: '2% 3% 3% 3%' }}>
+        <h2>Secondary Marketplace</h2>
+        <div style={{ height: 400, width: '100%' }}>
+          <TextField
+            placeholder="Search for concert..."
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            onChange={(e) => setFilterModel({
+              items: [
+                {
+                  field: 'concertName',
+                  operator: 'contains',
+                  value: e.target.value,
+                },
+              ],
+            })}
+            style={{ width: 500, margin: 10 }}
+          />
+          {!isOwner && (<Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
+            List / Unlist My Tickets
+          </Button>)}
+          <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose} 
+            handleOpenBackdrop={handleOpenBackdrop} handleCloseBackdrop={handleCloseBackdrop}
+            handleOpenAlert={handleOpenAlert} handleCloseAlert={handleCloseAlert} setListingsTableRows={setTableRows}/>
+          <DataGrid
+            rows={tableRows}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: { page: 0, pageSize: 5 },
               },
-            ],
-          })}
-          style={{ width: 500, margin: 10 }}
-        />
-        {!isOwner && (<Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
-          List / Unlist My Tickets
-        </Button>)}
-        <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose}
-          handleOpenBackdrop={handleOpenBackdrop} />
-        <DataGrid
-          rows={tableRows}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 0, pageSize: 5 },
-            },
-          }}
-          pageSizeOptions={[5, 10]}
-          //checkboxSelection
-          filterModel={filterModel}
-          onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
-        />
+            }}
+            pageSizeOptions={[5, 10]}
+            filterModel={filterModel}
+            onFilterModelChange={(newFilterModel) => setFilterModel(newFilterModel)}
+          />
+        </div>
         <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
           <CircularProgress color="inherit" />
           &nbsp; &nbsp; Wait a moment...
         </Backdrop>
+        <SnackbarAlert openAlert={openAlert} handleCloseAlert={handleCloseAlert} alertType={alertType} alertMessage={alertMessage} />
       </div>
     </>
   );

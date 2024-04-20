@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SnackbarAlert from "./SnackbarAlert";
 
 import { ethers } from "ethers";
 import Concert from "../contracts/Concert.json";
 import Marketplace from "../contracts/Marketplace.json";
 import Ticket from "../contracts/Ticket.json";
-import SecondaryMarketplace from "../contracts/SecondaryMarketplace.json";
 import { CONCERT, MARKETPLACE, ORGANIZER, TICKET, SECONDARY_MARKETPLACE } from "../constants/Address";
 import { CATEGORY_COLOR } from "../constants/Enum";
 
 import Button from "react-bootstrap/esm/Button";
 import Form from "react-bootstrap/Form";
+import { CircularProgress, Backdrop } from "@mui/material";
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
@@ -21,14 +22,16 @@ const marketplaceContract = new ethers.Contract(
   signer
 );
 const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
-const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 
 const SEATS_PER_ROW = 10;
 
 const getTotalSeats = (seats) => {
   let sum = 0;
   for (let i = 0; i < seats.length; i++) {
-    sum += seats[i];
+    console.log("Loop - getTotalSeats for category: " + i);
+    console.log(typeof seats[i]);
+    console.log(parseInt(seats[i]));
+    sum += parseInt(seats[i]);
   }
   return sum;
 };
@@ -58,6 +61,20 @@ function Seats() {
   const [seatCategories, setSeatCategories] = useState([]);
   const [isOwner, setIsOwner] = useState(false);
 
+  const [openBackdrop, setOpenBackdrop] = React.useState(false);
+  const handleOpenBackdrop = () => setOpenBackdrop(true);
+  const handleCloseBackdrop = () => setOpenBackdrop(false);
+
+  const [openAlert, setOpenAlert] = React.useState(false);
+  const [alertType, setAlertType] = useState("success");
+  const [alertMessage, setAlertMessage] = useState("");
+  const handleOpenAlert = (type, message) => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setOpenAlert(true);
+  }
+  const handleCloseAlert = () => setOpenAlert(false);
+
   const fetchQueueData = async () => {
     const result = await marketplaceContract.getQueuePosition(concertId);
     setQueuePosition(parseInt(result));
@@ -66,6 +83,8 @@ function Seats() {
   const fetchSeatsData = async () => {
     const result = await concertContract.getCategorySeatArray(concertId);
     const totalSeats = getTotalSeats(result);
+    console.log("Fetch seats data");
+    console.log(totalSeats);
     setRows(totalSeats / SEATS_PER_ROW);
 
     const addresses = [];
@@ -125,13 +144,21 @@ function Seats() {
     console.log(passportIds);
     console.log(amtToPay);
 
+    handleOpenBackdrop();
     try {
-      await marketplaceContract.buyTicket(concertId, seatNums, passportIds, {
+      const transaction1 = await marketplaceContract.buyTicket(concertId, seatNums, passportIds, {
         value: amtToPay,
       });
-      await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
-      navigate("/marketplace");
+      const receipt1 = await transaction1.wait();
+      const transaction2 = await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
+      const receipt2 = await transaction2.wait();
+      handleOpenAlert("success", `Success! Transaction Hash: ${transaction1.hash}`);
+      setTimeout(() => {
+        handleCloseBackdrop();
+        navigate('/marketplace');
+      }, 2000);
     } catch (err) {
+      handleCloseBackdrop();
       console.log(err);
     }
   };
@@ -222,6 +249,11 @@ function Seats() {
           )}
         </div>
       )}
+      <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
+          <CircularProgress color="inherit" />
+          &nbsp; &nbsp; Wait a moment...
+        </Backdrop>
+        <SnackbarAlert openAlert={openAlert} handleCloseAlert={handleCloseAlert} alertType={alertType} alertMessage={alertMessage} />
     </>
   );
 }

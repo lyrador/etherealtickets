@@ -2,11 +2,10 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import NavBar from "./NavBar";
 import Header from "./Header";
-import PurchaseAlertDialog from "./PurchaseAlertDialog";
 import TicketPurchaseCard from "./TicketPurchaseCard";
 import FinancialTable from './FinancialTable';
+import SnackbarAlert from "./SnackbarAlert";
 
 import { Button, Backdrop, CircularProgress, Alert, Snackbar, TextField } from '@mui/material';
 
@@ -26,8 +25,6 @@ const signer = provider.getSigner();
 const secondaryMarketplaceContract = new ethers.Contract(SECONDARY_MARKETPLACE, SecondaryMarketplace.abi, signer);
 const ticketContract = new ethers.Contract(TICKET, Ticket.abi, signer);
 
-const content = "This transaction is not refundable. Are you sure you want to proceed?";
-
 function Checkout() {
     const navigate = useNavigate();
     const { state } = useLocation();
@@ -42,7 +39,13 @@ function Checkout() {
     const handleCloseBackdrop = () => setOpenBackdrop(false);
 
     const [openAlert, setOpenAlert] = React.useState(false);
-    const handleOpenAlert = () => setOpenAlert(true);
+    const [alertType, setAlertType] = useState("success");
+    const [alertMessage, setAlertMessage] = useState("");
+    const handleOpenAlert = (type, message) => {
+        setAlertMessage(message);
+        setAlertType(type);
+        setOpenAlert(true);
+    }
     const handleCloseAlert = () => setOpenAlert(false);
 
     const [balance, setBalance] = useState('0');
@@ -80,9 +83,10 @@ function Checkout() {
     const purchase = async () => {
         try {
             if (passportId == "") {
-                setOpenAlert(true);
+                handleOpenAlert("error", "Error: PassportId cannot be empty!")
                 return;
             }
+            handleOpenBackdrop();
             console.log("Ticket Cost: ")
             console.log(ticketCost);
 
@@ -99,18 +103,24 @@ function Checkout() {
             console.log(parseInt(totalCostInWei));
 
             console.log("Buy Result: ")
-            await secondaryMarketplaceContract.buyTicket(ticketId, passportId, {
+            const transaction1 = await secondaryMarketplaceContract.buyTicket(ticketId, passportId, {
                 value: totalCostInWei,
             });
-            await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
+            const receipt1 = await transaction1.wait();
+            const transaction2 = await ticketContract.setApprovalForAll(SECONDARY_MARKETPLACE, true);
+            const receipt2 = await transaction2.wait();
+
             console.log("Success");
+            console.log(transaction1);
+            console.log(receipt1);
+
+            handleOpenAlert("success", `Success! Transaction Hash: ${transaction1.hash}`);
 
             // add timeout and refresh
             console.log("Reloading");
-            handleOpenBackdrop();
             setTimeout(() => {
                 navigate(-1);
-            }, 16000);
+            }, 3000);
         } catch (err) {
             console.log(err);
         }
@@ -182,15 +192,11 @@ function Checkout() {
                     onChange={(e) => setPassportId(e.target.value)}
                 />
             </div>
-            <Snackbar open={openAlert} autoHideDuration={5000} onClose={handleCloseAlert}>
-                <Alert onClose={handleCloseAlert} severity="error" variant="filled" sx={{ width: '100%' }}>
-                    Error: PassportId cannot be empty!
-                </Alert>
-            </Snackbar>
             <Backdrop sx={{ color: '#fff', zIndex: 9999 }} open={openBackdrop} >
                 <CircularProgress color="inherit" />
                 &nbsp; &nbsp; Wait a moment...
             </Backdrop>
+            <SnackbarAlert openAlert={openAlert} handleCloseAlert={handleCloseAlert} alertType={alertType} alertMessage={alertMessage} />
         </>
     );
 }

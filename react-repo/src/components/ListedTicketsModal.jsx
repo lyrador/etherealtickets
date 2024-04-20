@@ -27,7 +27,7 @@ const style = {
     p: 4,
 };
 
-export default function BasicModal({ open, handleOpen, handleClose, handleOpenBackdrop }) {
+export default function BasicModal({ open, handleOpen, handleClose, handleOpenBackdrop, handleCloseBackdrop, handleOpenAlert, handleCloseAlert, setListingsTableRows }) {
 
     const columns = [
         { field: 'id', headerName: 'ID', flex: 1 },
@@ -76,32 +76,49 @@ export default function BasicModal({ open, handleOpen, handleClose, handleOpenBa
     const [tableRows, setTableRows] = useState([]);
 
     const listTicketWithId = async (ticketId) => {
+        handleOpenBackdrop();
         try {
             console.log("List ticket: ")
-            const result = await secondaryMarketplaceContract.listTicket(ticketId);
+            const transaction = await secondaryMarketplaceContract.listTicket(ticketId);
+            const receipt = transaction.wait();
             console.log("Success");
             console.log("Reloading");
-            handleOpenBackdrop();
+
+            console.log(transaction);
+            console.log(receipt);
+
+            handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
+
             setTimeout(() => {
-                window.location.reload(true);
-            }, 16000);
+                window.location.reload();
+            }, 3000);
         } catch (err) {
             console.log(err);
+            handleClose();
+            handleCloseBackdrop();
         }
     };
 
     const unlistTicketWithId = async (ticketId) => {
+        handleOpenBackdrop();
         try {
             console.log("Unlist ticket: ")
-            const result = await secondaryMarketplaceContract.unlistTicket(ticketId);
+            const transaction = await secondaryMarketplaceContract.unlistTicket(ticketId);
+            const receipt = transaction.wait();
             console.log("Success");
+            handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
             console.log("Reloading");
-            handleOpenBackdrop();
+
+            console.log(transaction);
+            console.log(receipt);
+
             setTimeout(() => {
-                window.location.reload(true);
-            }, 16000);
+                window.location.reload();
+            }, 3000);
         } catch (err) {
             console.log(err);
+            handleClose();
+            handleCloseBackdrop();
         }
     };
 
@@ -134,6 +151,29 @@ export default function BasicModal({ open, handleOpen, handleClose, handleOpenBa
 
         setTableRows(ownedTicketDetailsSecondaryStageArr);
     };
+
+    const fetchSecondaryMarketplaceListingsData = async () => {
+        const rawListedTicketDetailsArr = await secondaryMarketplaceContract.getAllListedTicketDetailsArray();
+        //console.log("getAllListedTicketDetailsArray");
+        const listedTicketDetailsArr = rawListedTicketDetailsArr.map((ticket) => {
+          const ticketStruct = ticket.ticket;
+          //console.log(parseInt(ticket.ticketId));
+          return {
+            id: parseInt(ticketStruct.ticketId),
+            concertName: ticketStruct.concertName,
+            concertId: parseInt(ticketStruct.concertId),
+            concertLoc: ticketStruct.concertLocation,
+            category: parseInt(ticketStruct.category),
+            ticketCost: parseInt(ticketStruct.cost),
+            concertDate: parseInt(ticketStruct.concertDate),
+            listedBy: ticket.listedBy,
+            seatNumber: parseInt(ticketStruct.seatNumber),
+            buyButton: 1
+          };
+        });
+    
+        setListingsTableRows(listedTicketDetailsArr);
+      };
 
     useEffect(() => {
         fetchOwnedTicketsInSecondarySaleStageData();
