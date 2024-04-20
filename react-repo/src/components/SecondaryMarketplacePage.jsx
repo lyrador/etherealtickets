@@ -24,6 +24,7 @@ function SecondaryMarketplacePage() {
   const navigate = useNavigate();
 
   const [currAccount, setCurrAccount] = React.useState('');
+  const [secondaryMarketBalance, setSecondaryMarketBalance] = React.useState('');
 
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
@@ -147,6 +148,30 @@ function SecondaryMarketplacePage() {
       method: "eth_requestAccounts",
     });
     setIsOwner(accounts[0] == ORGANIZER);
+    if (accounts[0] == ORGANIZER) {
+      const balance = await secondaryMarketplaceContract.getBalance();
+      setSecondaryMarketBalance(balance);
+    }
+  };
+
+  // Function to purchase
+  const withdrawBalance = async () => {
+    try {
+      handleOpenBackdrop();
+      console.log("Withdraw Balance: ")
+      const transaction = await secondaryMarketplaceContract.withdrawAll();
+      const receipt = await transaction.wait();
+
+      console.log("Success");
+      console.log(transaction);
+
+      handleOpenAlert("success", `Success! Transaction Hash: ${transaction.hash}`);
+
+      setSecondaryMarketBalance(0);
+    } catch (err) {
+      console.log(err);
+    }
+    handleCloseBackdrop();
   };
 
   return (
@@ -154,7 +179,26 @@ function SecondaryMarketplacePage() {
       <Header />
       <NavBar />
       <div style={{ margin: '2% 3% 3% 3%' }}>
-        <h2>Secondary Marketplace</h2>
+        <div style={{ width: '100%' }}>
+          <h2>Secondary Marketplace</h2>
+          {isOwner && (<div style={{}}>
+            <h5 style={{ float: 'left' }}>
+              Balance in Secondary Marketplace: {`${secondaryMarketBalance}`} wei
+            </h5>
+            {secondaryMarketBalance == 0 ? (
+              <Button variant='contained' disabled style={{ marginRight: 30, float: "right" }}>
+                Withdraw balance
+              </Button>
+            ) : (
+              <Button variant='contained' onClick={withdrawBalance} style={{ marginRight: 30, float: "right" }}>
+                Withdraw balance
+              </Button>
+            )
+            }
+          </div>)}
+        </div>
+        <br></br>
+        <br></br>
         <div style={{ height: 400, width: '100%' }}>
           <TextField
             placeholder="Search for concert..."
@@ -179,9 +223,9 @@ function SecondaryMarketplacePage() {
           {!isOwner && (<Button variant='contained' onClick={handleOpen} style={{ marginTop: 20, marginRight: 30, float: "right" }}>
             List / Unlist My Tickets
           </Button>)}
-          <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose} 
+          <ListedTicketsModal open={open} handleOpen={handleOpen} handleClose={handleClose}
             handleOpenBackdrop={handleOpenBackdrop} handleCloseBackdrop={handleCloseBackdrop}
-            handleOpenAlert={handleOpenAlert} handleCloseAlert={handleCloseAlert} setListingsTableRows={setTableRows}/>
+            handleOpenAlert={handleOpenAlert} handleCloseAlert={handleCloseAlert} setListingsTableRows={setTableRows} />
           <DataGrid
             rows={tableRows}
             columns={columns}
