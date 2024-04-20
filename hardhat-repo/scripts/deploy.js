@@ -122,7 +122,7 @@ async function main() {
     2,
     2
   );
-  await concert.updateConcertStage(2);
+  await concert.updateConcertStage(1);
 
   // Concert 2: Stage = SECONDARY_SALE
   await concert.createConcert(
@@ -133,8 +133,8 @@ async function main() {
     3,
     3
   );
-  await concert.updateConcertStage(3);
-  await concert.updateConcertStage(3);
+  await concert.updateConcertStage(2);
+  await concert.updateConcertStage(2);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
