@@ -178,14 +178,6 @@ contract SecondaryMarketplace {
         return ticketDetailsArr;
     }
 
-    function getBuyingCommission() public view returns (uint256) {
-        return buyingCommission;
-    }
-
-    function getSellingCommission() public view returns (uint256) {
-        return sellingCommission;
-    }
-
     function isTicketIdListed(uint256 ticketId) internal view returns (bool) {
         for (uint i = 0; i < allListedTicketIds.length; i++) {
             if (allListedTicketIds[i] == ticketId) {
@@ -204,6 +196,14 @@ contract SecondaryMarketplace {
         uint256 bal = address(this).balance;
         payable(secondaryMarketplaceContractOwner).transfer(bal);
         emit WithdrawBalance(secondaryMarketplaceContractOwner, bal);
+    }
+
+    function getBuyingCommission() public view returns (uint256) {
+        return buyingCommission;
+    }
+
+    function getSellingCommission() public view returns (uint256) {
+        return sellingCommission;
     }
 
     function updateBuyingCommission(uint256 newBuyingCommissionFee) public onlySecondaryMarketplaceContractOwner {

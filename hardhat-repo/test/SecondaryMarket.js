@@ -356,10 +356,11 @@ describe("SecondaryMarketplace", function () {
             const initialBuyerBal = await ethers.provider.getBalance(addr2);
     
             const ticketCost = ONE_ETH;
+            const amountToPay = ONE_ETH + BigInt(BUY_COMMISSION_SECONDARY_MKT); //added commission fee
     
             // Case where buy transaction is successful
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
-            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: TWO_ETH});
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: amountToPay});
     
             const approvalTxReceipt = await approvalTx.wait();
             const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
@@ -381,6 +382,57 @@ describe("SecondaryMarketplace", function () {
             expect(finalBuyerBal).to.equal(initialBuyerBal - BigInt(500) - ticketCost - buyTicketGas);
         });
 
+        it("Should buy ticket and return excess wei if there is excess wei sent", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                ticketContract,
+                secondaryMarketContract,
+                addr1,
+                addr2
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // List ticket from address 1, who has previously bought ticket
+            await secondaryMarketContract.connect(addr1).listTicket(1);
+    
+            const initialSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarketContract);
+            expect(initialSecondaryMarketBal).to.equal(0);
+            const initialSellerBal = await ethers.provider.getBalance(addr1);
+            const initialBuyerBal = await ethers.provider.getBalance(addr2);
+    
+            const ticketCost = ONE_ETH;
+            const amountToPay = TWO_ETH; // There is excess wei of (1 ETH - 500 wei)
+    
+            // Case where buy transaction is successful
+            let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
+            let buyTicketTx = await secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: amountToPay});
+    
+            const approvalTxReceipt = await approvalTx.wait();
+            const approvalGas = approvalTxReceipt.gasUsed * approvalTxReceipt.gasPrice;
+    
+            const buyTicketTxReceipt = await buyTicketTx.wait();
+            const buyTicketGas = buyTicketTxReceipt.gasUsed * buyTicketTxReceipt.gasPrice;
+    
+            // Check that ticket has been transferred to buyer, no more tickets listed
+            expect(await ticketContract.ownerOf(1)).to.equal(addr2);
+            expect(await secondaryMarketContract.getListedTicketsFromConcert(1)).to.be.an('array').that.is.empty;
+    
+            // Check the balance of the contract after receiving Ether
+            const finalSecondaryMarketBal = await ethers.provider.getBalance(secondaryMarketContract);
+            const finalSellerBal = await ethers.provider.getBalance(addr1);
+            const finalBuyerBal = await ethers.provider.getBalance(addr2);
+    
+            expect(finalSecondaryMarketBal).to.equal(1000); //buying + selling commission
+            expect(finalSellerBal).to.equal(initialSellerBal - BigInt(500) + ticketCost - approvalGas);
+            expect(finalBuyerBal).to.equal(initialBuyerBal - BigInt(500) - ticketCost - buyTicketGas); // NOTICE THAT EXCESS WEI IS SENT BACK CORRECTLY
+        });
+
         it("Should fail to buy ticket if insufficient amount sent", async function () {
             // Deploy
             const { 
@@ -400,7 +452,7 @@ describe("SecondaryMarketplace", function () {
             // List ticket from address 1, who has previously bought ticket
             await secondaryMarketContract.connect(addr1).listTicket(1);
     
-            // Expect buy to fail if not enough money (buying and selling commission are 500 wei each)
+            // Expect buy to fail if not enough money (buying and selling commission are 500 wei each, so need to pay at least 1 ETH + 500 wei)
             let approvalTx = await ticketContract.connect(addr1).setApprovalForAll(secondaryMarketContract, true);
             let buy = secondaryMarketContract.connect(addr2).buyTicket(1, "S1122334Z", {value: ONE_ETH});
     
@@ -543,6 +595,94 @@ describe("SecondaryMarketplace", function () {
 
             await expect(
                 secondaryMarketContract.connect(addr1).withdrawAll()
+            ).to.be.revertedWith("Not owner of SecondaryMarketplace contract");
+        });
+    });
+
+    describe("Update Commission Fees", function () {
+        it("Should update buying commission fee", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                secondaryMarketContract
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // Update buying commission
+            const initialBuyingCommission = await secondaryMarketContract.getBuyingCommission();
+            expect(initialBuyingCommission).to.equal(500);
+
+            await secondaryMarketContract.updateBuyingCommission(2000);
+
+            const finalBuyingCommission = await secondaryMarketContract.getBuyingCommission();
+            expect(finalBuyingCommission).to.equal(2000);
+        });
+
+        it("Should fail to update buying commission fee if called by non-owner", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                secondaryMarketContract,
+                addr1,
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // Only owner can update buying commission, will fail to update if non-owner calls function
+            await expect(
+                secondaryMarketContract.connect(addr1).updateBuyingCommission(2000)
+            ).to.be.revertedWith("Not owner of SecondaryMarketplace contract");
+        });
+
+        it("Should update selling commission fee", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                secondaryMarketContract
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);;
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // Update selling commission
+            const initialSellingCommission = await secondaryMarketContract.getSellingCommission();
+            expect(initialSellingCommission).to.equal(500);
+
+            await secondaryMarketContract.updateSellingCommission(2000);
+
+            const finalSellingCommission = await secondaryMarketContract.getSellingCommission();
+            expect(finalSellingCommission).to.equal(2000);
+        });
+
+        it("Should fail to update selling commission fee if called by non-owner", async function () {
+            // Deploy
+            const { 
+                concertContract,
+                secondaryMarketContract,
+                addr1,
+            } = await loadFixture(deployContractsAndSetupPrerequisitesForSecondaryMarketFixture);
+
+            // Update concert stage to SECONDARY_SALE
+            await concertContract.updateConcertStage(1);
+    
+            // Create secondary marketplace for given concertId
+            await secondaryMarketContract.createSecondaryMarketplace(1);
+
+            // Only owner can update selling commission, will fail to update if non-owner calls function
+            await expect(
+                secondaryMarketContract.connect(addr1).updateSellingCommission(2000)
             ).to.be.revertedWith("Not owner of SecondaryMarketplace contract");
         });
     });
