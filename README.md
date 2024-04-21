@@ -51,3 +51,11 @@ cd react-repo
 npm run start
 ```
 This starts the frontend. You can now interact with the blockchain through the frontend.
+
+
+ ## Executing Hardhat Test Cases
+ ```
+cd hardhat-repo
+npm install       (if required)
+npx hardhat test
+```
