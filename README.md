@@ -66,11 +66,19 @@ npx hardhat test
 
  ## Architecture
 
- ![KNfwKcCW1ATWTPStZWPwQFs_9La3JNIubLNPL8fsDNrOvQCnSjMGExoc1yeyVMnDGcB0RY3kqe4V3WIatzQ5fkWEGWtudBHwo3U0UxTElmDuqI2BGEWdjB-Dv8k0](https://github.com/lyrador/etherealtickets/assets/65401176/ce162d15-6f58-4401-9cad-384303f109b7)
+![image](https://github.com/lyrador/etherealtickets/assets/65401176/9b04a917-acf6-4911-9abf-4680a135504b)
+
 
 
 ![7L3IkkdQNMw0S7TqkK5FXe_ABhPwnhZSFihVHYrSJwH9wDb0aZW5TCOU0jaB5VszvzSfr_8uMwbXHsakHSPryPqEs2IGtFlJ_6ziZ_slrXmqPRZYrbmhRNrjtqUY](https://github.com/lyrador/etherealtickets/assets/65401176/a65ce9b4-2025-49c5-b5a5-5590642ca35c)
 
 
+
 ![ob9Zq4YlpoMi1fAxdYjnPDGzxEhjMyc78iUpyZkthsiYd98cSqKqprmu0HYu7wVYpHarjE_INDGKDb7hvUsUyBa65lm6OCqaTqHJ8Lxp-N9NE_wQXzDmgjb0JouN](https://github.com/lyrador/etherealtickets/assets/65401176/4684dec3-e04d-4d7c-a4f2-1cb24f4a6dcf)
+
+
+
+
+ ## Demo
+ https://drive.google.com/file/d/1yp_O4PBRgB1Vijdp6Cx_bW9X0YEpwOFi/view?usp=drive_link
 
